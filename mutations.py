@@ -26,7 +26,7 @@ class MutateGraph:
             source_node = nodes.pop()
             dest_node = nodes.pop()
 
-            self.mutations.append(("Swap", source_node, dest_node))
+            self.mutations.append(("SWAP", source_node, dest_node))
             if DEBUG:
                 print "  Swapping nodes ", source_node, dest_node
 
@@ -46,6 +46,7 @@ class MutateGraph:
     def relabel_node(self, times):
         nodes = self.graph.nodes
         treelevels = self.graph.treelevels
+
         if DEBUG:
             print "\nRelabeling mutations:"
 
@@ -71,8 +72,10 @@ class MutateGraph:
             node_to_be_changed = nodes_to_be_changed.pop()
             node_to_change_to = nodes_to_add.pop()
 
-            self.mutations.append(("Relabel", node_to_be_changed, node_to_change_to))
-            print "Changing node:", node_to_be_changed, "for node", node_to_change_to
+            self.mutations.append(("RELABEL", node_to_be_changed, node_to_change_to))
+            if DEBUG:
+                print "Changing node:", node_to_be_changed, "for node", node_to_change_to
+
             for level in treelevels:
                     for block in level:
                         if node_to_be_changed in block:
@@ -102,8 +105,9 @@ class MutateGraph:
             orig_node = treelevels[orig.level][orig.block][orig.position]
             dest_node = treelevels[dest.level][dest.block][dest.position]
 
-            self.mutations.append(("Delete", orig_node, dest_node))
-            print "Removing link from node ", orig_node, "to", dest_node
+            self.mutations.append(("DELETE", orig_node, dest_node))
+            if DEBUG:
+                print "Removing link from node ", orig_node, "to", dest_node
 
             # There is still a path that can reach the current dest node
             # no need to remove its descecndants
@@ -133,7 +137,8 @@ class MutateGraph:
 
         positions = [orig_link.orig]
 
-        print "Reordering a path:"
+        if DEBUG:
+            print "Reordering a path:"
 
         frontier = [orig_link]
         while frontier:
@@ -153,7 +158,7 @@ class MutateGraph:
 
         reordered_branch = list(nodes)
         shuffle(reordered_branch)
-        self.mutations.append(('Reordering Path', nodes, reordered_branch))
+        self.mutations.append(('REORDER_PATH', nodes, reordered_branch))
         print "Reordering path:", nodes, "to", reordered_branch
 
         for node, p in zip(reordered_branch, positions):
@@ -168,10 +173,11 @@ class MutateGraph:
             block = randint(0, len(treelevels[level]) - 1)
 
             orig_block = list(treelevels[level][block])
-            print "Reordering block", treelevels[level][block],
             shuffle(treelevels[level][block])
-            print "reordered into ", treelevels[level][block]
-            self.mutations.append(('Reorder Block', orig_block, block))
+
+            self.mutations.append(('REORDER_BLOCK', orig_block, block))
+            if DEBUG:
+                print "Reordering block", orig_block, "reordered into", treelevels[level][block]
 
     def redundancy(self, times):
         treelevels = self.graph.treelevels
@@ -182,7 +188,9 @@ class MutateGraph:
             to_duplicate = nodes[0]
             to_remove = nodes[1]
 
-            print "Duplicating node:", to_duplicate, "Removing:", to_remove
+            self.mutations.append(("DUPLICATE", to_duplicate, to_remove))
+            if DEBUG:
+                print "Duplicating node:", to_duplicate, "Removing:", to_remove
 
             if len(to_duplicate) == 1:
                 to_duplicate += '1'
