@@ -5,6 +5,7 @@ from string import ascii_lowercase, ascii_uppercase, digits
 from graph import Position
 from utils import DEBUG
 
+
 class MutateGraph:
     """
     This class perform mutations to a graph
@@ -87,7 +88,9 @@ class MutateGraph:
         treelinks = self.graph.treelinks
 
         if not treelinks:
-            print "No more branchs to delete"
+            print "Warning::No more branchs to delete"
+            return
+
         orig_link = choice(treelinks)
         if start_from_root:
             root = Position(0, 0, 0)
@@ -95,7 +98,10 @@ class MutateGraph:
                                       treelinks))
 
         frontier = [orig_link]
-        print "Removing branch:"
+
+        if DEBUG:
+            print "Removing branch:"
+
         while frontier:
             link = frontier.pop()
             treelinks.remove(link)
@@ -159,7 +165,8 @@ class MutateGraph:
         reordered_branch = list(nodes)
         shuffle(reordered_branch)
         self.mutations.append(('REORDER_PATH', nodes, reordered_branch))
-        print "Reordering path:", nodes, "to", reordered_branch
+        if DEBUG:
+            print "Reordering path:", nodes, "to", reordered_branch
 
         for node, p in zip(reordered_branch, positions):
             level, block, position = p
@@ -200,6 +207,10 @@ class MutateGraph:
                     if to_remove in block:
                         index = block.index(to_remove)
                         block[index] = to_duplicate
+
+    def print_mutations_summary(self):
+        for mutation in self.mutations:
+            print mutation
 
     def __init__(self, graph):
         self.mutations = []
