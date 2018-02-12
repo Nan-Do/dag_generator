@@ -269,10 +269,30 @@ class Graph:
 
             f.write('}')
 
+    def to_python_dict(self):
+        """
+        Generate a python dictionary representation for the graph
+
+        Returns a default dict containing the representation of the graph
+        as adjacency lists.
+        """
+        g = defaultdict(list)
+
+        for (orig_position, dest_position) in self.treelinks:
+            level, block, position = orig_position
+            orig_node = self.treelevels[level][block][position]
+
+            level, block, position = dest_position
+            dest_node = self.treelevels[level][block][position]
+
+            g[orig_node].append(dest_node)
+
+        return g
+
     def print_graph(self):
         print self.treelevels
         print self.treelinks
- 
+
     def __init__(self,
                  size,
                  outdegree,
