@@ -1,4 +1,19 @@
-DEBUG = True
+from random import choice
+from string import ascii_letters, digits
+
+DEBUG = False
+
+
+def random_id_generator(size=6, chars=ascii_letters+digits):
+    """
+    Generate a random id.
+
+    size -> The size of the generated id.
+    chars -> The pool of characters to choose to generate the id.
+
+    Returns a string.
+    """
+    return ''.join(choice(chars) for _ in range(size))
 
 
 def get_chunks(seq, size, step=1):
