@@ -1,8 +1,6 @@
 import argparse
 from copy import deepcopy
 
-from utils import DEBUG
-
 from graph import Graph
 from mutations import MutateGraph
 
@@ -61,19 +59,26 @@ if __name__ == '__main__':
                         type=int,
                         help="Mutation that deletes a branch. (Repeated DELETE times)")
 
+    parser.add_argument("--summary", dest="summary", action="store_true",
+                        help="Print a summary of the mutations")
+
     args = parser.parse_args()
+
+    mutate_graph = False
+    if args.swap or args.relabel or args.spine or args.reorder or\
+       args.redundancy or args.delete:
+        mutate_graph = True
 
     # Generate the first graph
     g1 = Graph(args.size,
                args.outdegree,
                args.depth,
                args.dag)
-    g1.print_graph()
-    g1.generate_dot('test')
 
     # Create a copy of the graph to mutate
-    g2 = deepcopy(g1)
-    m = MutateGraph(g2)
+    if mutate_graph:
+        g2 = deepcopy(g1)
+        m = MutateGraph(g2)
 
     # Do the mutations
     if args.swap:
@@ -94,4 +99,10 @@ if __name__ == '__main__':
     if args.delete:
         m.delete_path(args.delete)
 
-    g2.generate_dot('test-mod')
+    if args.image:
+        g1.generate_dot(args.image)
+        if mutate_graph:
+            g2.generate_dot(args.image + '-mod')
+
+    if args.summary and mutate_graph:
+        m.print_mutations_summary()
