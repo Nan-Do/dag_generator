@@ -2,7 +2,7 @@ from itertools import chain
 from random import shuffle, choice, randint
 from string import ascii_lowercase, ascii_uppercase, digits
 
-from graph import Position
+from graph import Position, GraphLink
 from utils import DEBUG
 
 
@@ -10,7 +10,80 @@ class MutateGraph:
     """
     This class performs mutations to a graph
     """
+    def add_node(self, times):
+        """
+        Mutation that adds a node to the current graph
+
+        times -> How many relabelings we must perform.
+        """
+        nodes = self.graph.nodes
+        treelevels = self.graph.treelevels
+
+        # Check which identifiers have been used
+        nodes_to_add = set(chain.from_iterable([list(ascii_lowercase),
+                                                list(ascii_uppercase),
+                                                list(digits)]))
+        nodes_to_add.symmetric_difference_update(nodes)
+
+        # In case there are no identifiers available generate new ones.
+        if len(nodes_to_add) == 0:
+            last = max(nodes)
+            nodes_to_add = set(xrange(last+1, last+1+times))
+
+        nodes_to_add = list(nodes_to_add)
+        shuffle(nodes_to_add)
+
+        for _ in xrange(times):
+            node = nodes_to_add.pop()
+            level = randint(1, len(treelevels) - 1)
+            block = randint(0, len(treelevels[level]) - 1)
+            position = randint(0, len(treelevels[level][block]) - 1)
+
+            if DEBUG:
+                print "  Adding node ", node, "to block",\
+                      treelevels[level][block], "at position", position
+
+            self.mutations.append(("ADD_NODE",
+                                   list(treelevels[level][block]),
+                                   node,
+                                   position))
+            treelevels[level][block].insert(position, node)
+
+            # Update treelinks
+            # Add the new link
+            father = None
+            link_index = 0
+            new_treelinks = []
+            for pos, link in enumerate(self.graph.treelinks):
+                dest = link.dest
+                if dest.level == level and dest.block == block:
+                    if dest.position >= position:
+                        if dest.position == position:
+                            father = link.orig
+                            link_index = pos
+
+                        new_link = GraphLink(father,
+                                             Position(level,
+                                                      block,
+                                                      dest.position + 1))
+                        new_treelinks.append(new_link)
+                        continue
+
+                new_treelinks.append(link)
+
+            new_link = GraphLink(father,
+                                 Position(level,
+                                          block,
+                                          position))
+            new_treelinks.insert(link_index, new_link)
+            self.graph.treelinks = new_treelinks
+
     def swap_nodes(self, times):
+        """
+        Mutation that swaps two nodes from the current graph.
+
+        times -> How many relabelings we must perform.
+        """
         nodes = list(self.graph.nodes)
         shuffle(nodes)
 

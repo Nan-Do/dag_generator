@@ -39,6 +39,10 @@ if __name__ == '__main__':
                         type=int,
                         help="Mutation that swaps two nodes. (Repeated SWAP times)")
 
+    parser.add_argument("--add", dest="add",
+                        type=int,
+                        help="Mutation that adds a node. (Repeated ADD times)")
+
     parser.add_argument("--relabel", dest="relabel",
                         type=int,
                         help="Mutation that relabels one node with a label from outside the domain. (Repeated RELABEL times)")
@@ -65,8 +69,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     mutate_graph = False
-    if args.swap or args.relabel or args.spine or args.reorder or\
-       args.redundancy or args.delete:
+    if args.swap or args.add or args.relabel or args.spine or\
+       args.reorder or args.redundancy or args.delete:
         mutate_graph = True
 
     # Generate the first graph
@@ -83,6 +87,9 @@ if __name__ == '__main__':
     # Do the mutations
     if args.swap:
         m.swap_nodes(args.swap)
+
+    if args.add:
+        m.add_node(args.add)
 
     if args.relabel:
         m.relabel_node(args.relabel)
