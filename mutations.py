@@ -325,6 +325,9 @@ class MutateGraph:
                         block[index] = to_duplicate
 
     def print_mutations_summary(self):
+        """
+        Show a summary of the applied mutations
+        """
         SPACES = ' ' * 3
         s = ''
         print "Mutations:"
@@ -380,13 +383,18 @@ class MutateGraph:
 
             print s
 
-    def store_mutations_to_file(self, file_name="mutations"):
-        file_name += ".txt"
-        with open(file_name, 'w') as f:
+    def store_mutations_to_file(self, file_name, field_separator='|'):
+        """
+        Store the generated mutations
+
+        file_name ->  the name of the file_name to store the mutations
+        field_separator -> the separator for the fields.
+        """
+        with open(file_name + '.txt', 'w') as f:
             for mutation in self.mutations:
                 opcode = mutation[0]
-                operands = ':'.join(map(str, mutation[1:]))
-                f.write(opcode + ":" + operands + "\n")
+                operands = field_separator.join(map(str, mutation[1:]))
+                f.write(opcode + field_separator + operands + "\n")
 
     def __init__(self, graph):
         self.mutations = []
