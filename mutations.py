@@ -265,7 +265,9 @@ class MutateGraph:
         reordered_branch = list(nodes)
         shuffle(reordered_branch)
 
-        self.mutations.append(('REORDER_PATH', nodes, reordered_branch))
+        self.mutations.append(('REORDER_PATH',
+                               list(nodes),
+                               reordered_branch))
         if DEBUG:
             print "Reordering path:", nodes, "to", reordered_branch
 
@@ -288,7 +290,9 @@ class MutateGraph:
             orig_block = list(treelevels[level][block])
             shuffle(treelevels[level][block])
 
-            self.mutations.append(('REORDER_BLOCK', orig_block, block))
+            self.mutations.append(('REORDER_BLOCK',
+                                   orig_block,
+                                   list(treelevels[level][block])))
             if DEBUG:
                 print "Reordering block", orig_block, "reordered into", treelevels[level][block]
 
@@ -321,8 +325,60 @@ class MutateGraph:
                         block[index] = to_duplicate
 
     def print_mutations_summary(self):
+        SPACES = ' ' * 3
+        s = ''
+        print "Mutations:"
         for mutation in self.mutations:
-            print mutation
+            s = SPACES
+            if mutation[0] == "DUPLICATE":
+                to_duplicate = mutation[0]
+                to_remove = mutation[1]
+
+                s += "Duplicating node: {} Removing: {}".format(to_duplicate,
+                                                                to_remove)
+            elif mutation[0] == "ADD_NODE":
+                block = mutation[1]
+                node = mutation[2]
+                position = mutation[3]
+
+                s += "Adding node: {}, Block: {}, Position: {}".format(node,
+                                                                       block,
+                                                                       position)
+            elif mutation[0] == "SWAP":
+                source_node = mutation[1]
+                dest_node = mutation[2]
+
+                s += "Swapping nodes: {} with {}".format(source_node,
+                                                         dest_node)
+            elif mutation[0] == "RELABEL":
+                node_to_be_changed = mutation[1]
+                node_to_change_to = mutation[2]
+
+                s += "Relabeling node: {}, {}".format(node_to_be_changed,
+                                                      node_to_change_to)
+            elif mutation[0] == "DELETE":
+                orig_node = mutation[1]
+                dest_node = mutation[2]
+
+                s += "Removing link: {}, {}".format(orig_node,
+                                                    dest_node)
+            elif mutation[0] == "REORDER_PATH":
+                nodes = mutation[1]
+                reordered_branch = mutation[2]
+
+                s += "Reordering path: {}, {}".format(nodes,
+                                                      reordered_branch)
+            elif mutation[0] == "REORDER_BLOCK":
+                orig_block = mutation[1]
+                ordered_block = mutation[2]
+
+                s += "Reordering block: {}, {}".format(orig_block,
+                                                       ordered_block)
+            else:
+                s += "UNKNOWN OPERATION: {}".format(SPACES,
+                                                    mutation)
+
+            print s
 
     def __init__(self, graph):
         self.mutations = []
