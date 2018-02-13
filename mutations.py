@@ -10,14 +10,15 @@ class MutateGraph:
     """
     This class performs mutations to a graph
     """
-    def add_node(self, times):
+    def __get_nodes_to_add(self, new_identifiers):
         """
-        Mutation that adds a node to the current graph
+        Generates a list of nodes ordered randomly that are not present in the
+        current graph.
 
-        times -> How many relabelings we must perform.
+        new_identifiers -> In case all the possible identifies are taken
+                           specify how many need to be generated.
         """
         nodes = self.graph.nodes
-        treelevels = self.graph.treelevels
 
         # Check which identifiers have been used
         nodes_to_add = set(chain.from_iterable([list(ascii_lowercase),
@@ -28,10 +29,21 @@ class MutateGraph:
         # In case there are no identifiers available generate new ones.
         if len(nodes_to_add) == 0:
             last = max(nodes)
-            nodes_to_add = set(xrange(last+1, last+1+times))
+            nodes_to_add = set(xrange(last+1, last+1+new_identifiers))
 
         nodes_to_add = list(nodes_to_add)
         shuffle(nodes_to_add)
+
+        return nodes_to_add
+
+    def add_node(self, times):
+        """
+        Mutation that adds a node to the current graph
+
+        times -> How many relabelings we must perform.
+        """
+        treelevels = self.graph.treelevels
+        nodes_to_add = self.__get_nodes_to_add(times)
 
         for _ in xrange(times):
             node = nodes_to_add.pop()
@@ -128,31 +140,18 @@ class MutateGraph:
         identifier that has not been used. If all the identifiers have been
         used new identifiers as numbers will be generated.
         """
-        nodes = self.graph.nodes
         treelevels = self.graph.treelevels
 
         if DEBUG:
             print "\nRelabeling mutations:"
 
-        if times > len(nodes):
+        if times > len(self.graph.nodes):
             print 'Warning::Requesting more changes than nodes the graph ' +\
                   'contains'
-            times = len(nodes)
+            times = len(self.graph.nodes)
 
-        # Check which identifiers have been used
-        nodes_to_add = set(chain.from_iterable([list(ascii_lowercase),
-                                                list(ascii_uppercase),
-                                                list(digits)]))
-        nodes_to_add.symmetric_difference_update(nodes)
-
-        # In case there are no identifiers available generate new ones.
-        if len(nodes_to_add) == 0:
-            last = max(nodes)
-            nodes_to_add = set(xrange(last+1, last+1+times))
-
-        nodes_to_add = list(nodes_to_add)
-        shuffle(nodes_to_add)
-        nodes_to_be_changed = list(nodes)
+        nodes_to_add = self.__get_nodes_to_add(times)
+        nodes_to_be_changed = list(self.graph.nodes)
         shuffle(nodes_to_be_changed)
 
         # Perform the relabelings
@@ -160,7 +159,9 @@ class MutateGraph:
             node_to_be_changed = nodes_to_be_changed.pop()
             node_to_change_to = nodes_to_add.pop()
 
-            self.mutations.append(("RELABEL", node_to_be_changed, node_to_change_to))
+            self.mutations.append(("RELABEL",
+                                   node_to_be_changed,
+                                   node_to_change_to))
             if DEBUG:
                 print "Changing node:", node_to_be_changed, "for node", node_to_change_to
 
