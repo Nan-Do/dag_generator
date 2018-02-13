@@ -312,7 +312,7 @@ class Graph:
         lists_of_nodes = self.__generate_nodelists(pool_of_nodes,
                                                    num_of_lists,
                                                    outdegree)
-        self.nodes = tuple(chain.from_iterable(lists_of_nodes))
+        self.nodes = (root,) + tuple(chain.from_iterable(lists_of_nodes))
         if DEBUG:
             number_of_nodes = len(self.nodes)
             print "Number of nodes for the graph:", number_of_nodes, '/', size
