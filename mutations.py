@@ -380,6 +380,14 @@ class MutateGraph:
 
             print s
 
+    def store_mutations_to_file(self, file_name="mutations"):
+        file_name += ".txt"
+        with open(file_name, 'w') as f:
+            for mutation in self.mutations:
+                opcode = mutation[0]
+                operands = ':'.join(map(str, mutation[1:]))
+                f.write(opcode + ":" + operands + "\n")
+
     def __init__(self, graph):
         self.mutations = []
         self.graph = graph

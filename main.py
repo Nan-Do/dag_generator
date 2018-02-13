@@ -113,3 +113,4 @@ if __name__ == '__main__':
 
     if args.summary and mutate_graph:
         m.print_mutations_summary()
+        m.store_mutations_to_file('mutations')
