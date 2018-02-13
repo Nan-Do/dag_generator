@@ -8,7 +8,7 @@ from utils import DEBUG
 
 class MutateGraph:
     """
-    This class perform mutations to a graph
+    This class performs mutations to a graph
     """
     def swap_nodes(self, times):
         nodes = list(self.graph.nodes)
@@ -20,7 +20,8 @@ class MutateGraph:
             print "\nSwapping mutations:"
 
         if times > (len(nodes) / 2):
-            print "Warning::Specfied more swappings than the highest number possible for the current graph"
+            print "Warning::Specfied more swappings than the highest " +\
+                  "number possible for the current graph"
             times = len(nodes) / 2
 
         for _ in xrange(times):
@@ -45,6 +46,15 @@ class MutateGraph:
                         block[index] = source_node
 
     def relabel_node(self, times):
+        """
+        Mutation that relabels a node whitin the graph.
+
+        times -> How many relabelings we must perform.
+
+        The mutation occurs changing one of the node identifiers with an
+        identifier that has not been used. If all the identifiers have been
+        used new identifiers as numbers will be generated.
+        """
         nodes = self.graph.nodes
         treelevels = self.graph.treelevels
 
@@ -52,14 +62,17 @@ class MutateGraph:
             print "\nRelabeling mutations:"
 
         if times > len(nodes):
-            print 'Warning::Requesting more changes than nodes the graph contains'
+            print 'Warning::Requesting more changes than nodes the graph ' +\
+                  'contains'
             times = len(nodes)
 
+        # Check which identifiers have been used
         nodes_to_add = set(chain.from_iterable([list(ascii_lowercase),
                                                 list(ascii_uppercase),
                                                 list(digits)]))
         nodes_to_add.symmetric_difference_update(nodes)
 
+        # In case there are no identifiers available generate new ones.
         if len(nodes_to_add) == 0:
             last = max(nodes)
             nodes_to_add = set(xrange(last+1, last+1+times))
@@ -69,6 +82,7 @@ class MutateGraph:
         nodes_to_be_changed = list(nodes)
         shuffle(nodes_to_be_changed)
 
+        # Perform the relabelings
         for _ in xrange(times):
             node_to_be_changed = nodes_to_be_changed.pop()
             node_to_change_to = nodes_to_add.pop()
@@ -84,6 +98,12 @@ class MutateGraph:
                             block[index] = node_to_change_to
 
     def delete_path(self, times, start_from_root=False):
+        """
+        Mutation that deletes a path on the graph.
+
+        times -> How many paths to remove.
+        start_from_root -> Does the path need to start from the root node?
+        """
         treelevels = self.graph.treelevels
         treelinks = self.graph.treelinks
 
@@ -126,6 +146,12 @@ class MutateGraph:
             frontier.extend(links)
 
     def reorder_path(self, start_from_root=True):
+        """
+        Mutation that reorders a path on the graph.
+
+        times -> How many paths to reorder.
+        start_from_root -> Does the path need to start from the root node?
+        """
         treelevels = self.graph.treelevels
         treelinks = self.graph.treelinks
         orig_link = choice(treelinks)
@@ -164,6 +190,7 @@ class MutateGraph:
 
         reordered_branch = list(nodes)
         shuffle(reordered_branch)
+
         self.mutations.append(('REORDER_PATH', nodes, reordered_branch))
         if DEBUG:
             print "Reordering path:", nodes, "to", reordered_branch
@@ -173,6 +200,11 @@ class MutateGraph:
             treelevels[level][block][position] = node
 
     def reorder_block(self, times):
+        """
+        Mutation that reorders the children of a node.
+
+        times -> How many blocks do we have to reorders.
+        """
         treelevels = self.graph.treelevels
 
         for _ in xrange(times):
@@ -187,6 +219,12 @@ class MutateGraph:
                 print "Reordering block", orig_block, "reordered into", treelevels[level][block]
 
     def redundancy(self, times):
+        """
+        Mutation that relabels the identifier of a node with another existing
+        identifier of the graph.
+
+        times -> How many nodes do we have to copy.
+        """
         treelevels = self.graph.treelevels
 
         for _ in xrange(times):
