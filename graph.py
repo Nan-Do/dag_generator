@@ -7,6 +7,16 @@ import sys
 
 from utils import DEBUG, get_chunks
 
+
+GraphConfig = namedtuple("GraphConfig", ["populate_randomly",
+                                         "from_file",
+                                         "size",
+                                         "outdegree",
+                                         "depth",
+                                         "dag_density",
+                                         "use_lowercase",
+                                         "file_name"])
+
 """
 Datatypes to represent the links of the graph, a position is a tuple of three
 element in which the first element represents the level of the graph, the
@@ -20,6 +30,19 @@ GraphLink = namedtuple('GraphLink', ['orig', 'dest'])
 
 
 class Graph:
+    def __store_links_into_file(self, f):
+        for link in self.treelinks:
+            orig_position, dest_position = link
+
+            level, block, position = orig_position
+            orig_node = self.treelevels[level][block][position]
+
+            level, block, position = dest_position
+            dest_node = self.treelevels[level][block][position]
+
+            f.write('\t{} -> {};\n'.format(orig_node,
+                                           dest_node))
+
     def __generate_pool_nodes(self, size, lower=True):
         """
         Generate a pool of elements that will be used as a nodes for the graph.
@@ -255,18 +278,13 @@ class Graph:
         """
         with open(file_name + '.dot', 'w') as f:
             f.write('strict digraph {\n')
-            for link in self.treelinks:
-                orig_position, dest_position = link
+            self.__store_links_into_file(f)
+            f.write('}')
 
-                level, block, position = orig_position
-                orig_node = self.treelevels[level][block][position]
-
-                level, block, position = dest_position
-                dest_node = self.treelevels[level][block][position]
-
-                f.write('\t{} -> {};\n'.format(orig_node,
-                                               dest_node))
-
+    def store_graph(self, file_name):
+        with open(file_name + ".txt", "w") as f:
+            f.write('Graph {\n')
+            self.__store_links_into_file(f)
             f.write('}')
 
     def to_python_dict(self):
@@ -293,12 +311,16 @@ class Graph:
         print self.treelevels
         print self.treelinks
 
-    def __init__(self,
-                 size,
-                 outdegree,
-                 depth,
-                 dag_density,
-                 use_lowercase=True):
+    def __load_from_file(self, file_name):
+        pass
+
+    def __populate_randomly(self, TreeConfig):
+        # Check the TreeConfig
+        size = TreeConfig.size
+        outdegree = TreeConfig.outdegree
+        depth = TreeConfig.depth
+        dag_density = TreeConfig.dag_density
+        use_lowercase = TreeConfig.use_lowercase
 
         pool_of_nodes = self.__generate_pool_nodes(size, use_lowercase)
 
@@ -347,3 +369,13 @@ class Graph:
 
         if dag_density != "none":
             self.__generate_dag(num_of_dag_links)
+
+    def __init__(self, GraphConfig):
+        if GraphConfig.populate_randomly:
+            self.__populate_randomly(GraphConfig)
+        elif GraphConfig.from_file:
+            self.__load_from_file(GraphConfig.file_name)
+        else:
+            raise ValueError("Unknown constructor method for the Graph")
+
+

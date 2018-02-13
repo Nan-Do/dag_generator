@@ -1,7 +1,7 @@
 import argparse
 from copy import deepcopy
 
-from graph import Graph
+from graph import Graph, GraphConfig
 from mutations import MutateGraph
 
 if __name__ == '__main__':
@@ -34,6 +34,9 @@ if __name__ == '__main__':
                         default="none",
                         help="Specify the density of the dag, if not specified it will generate a tree",
                         choices=["none", "sparse", "medium", "dense"])
+
+    parser.add_argument("--store-graph", dest="store_graph", action="store_true",
+                        help="Store the generated graph")
 
     parser.add_argument("--swap", dest="swap",
                         type=int,
@@ -73,11 +76,21 @@ if __name__ == '__main__':
        args.reorder or args.redundancy or args.delete:
         mutate_graph = True
 
+    use_lowercase = True
+    gc = GraphConfig(True,
+                     False,
+                     args.size,
+                     args.outdegree,
+                     args.depth,
+                     args.dag,
+                     use_lowercase,
+                     None)
+
     # Generate the first graph
-    g1 = Graph(args.size,
-               args.outdegree,
-               args.depth,
-               args.dag)
+    g1 = Graph(gc)
+
+    if args.store_graph:
+        g1.store_graph('original_graph')
 
     # Create a copy of the graph to mutate
     if mutate_graph:
@@ -109,7 +122,7 @@ if __name__ == '__main__':
     if args.image:
         g1.generate_dot(args.image)
         if mutate_graph:
-            g2.generate_dot(args.image + '-mod')
+            g2.generate_dot(args.image + '_mod')
 
     if args.summary and mutate_graph:
         m.print_mutations_summary()
