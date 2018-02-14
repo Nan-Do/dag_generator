@@ -5,7 +5,10 @@ from graph import Graph, GraphConfig
 from mutations import MutateGraph
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Generate random acyclic directed graphs")
+    d = "Generate random acyclic directed graphs and produce mutations to " +\
+        "it. The tool acts as a little virtual machine to produce and " +\
+        "modify directed acyclic graphs"
+    parser = argparse.ArgumentParser(description=d)
 
     parser.add_argument("--size", dest="size",
                         type=int,
@@ -25,22 +28,25 @@ if __name__ == '__main__':
     parser.add_argument("--upper", dest="upper", action="store_true",
                         help="Use upper case instead lower case")
 
-    parser.add_argument("--image", dest="image",
+    parser.add_argument("--dot", dest="dot",
                         type=str,
-                        help="Generate an image of the generated graph")
+                        help="Generate a dot file of the generated graph")
 
     parser.add_argument("--dag", dest="dag",
                         type=str,
                         default="none",
-                        help="Specify the density of the dag, if not specified it will generate a tree",
+                        help="Specify the density of the dag, if not " +
+                             "specified it will generate a tree",
                         choices=["none", "sparse", "medium", "dense"])
 
-    parser.add_argument("--store-graph", dest="store_graph", action="store_true",
+    parser.add_argument("--store-graph", dest="store_graph",
+                        action="store_true",
                         help="Store the generated graph")
 
     parser.add_argument("--swap", dest="swap",
                         type=int,
-                        help="Mutation that swaps two nodes. (Repeated SWAP times)")
+                        help="Mutation that swaps two nodes. (Repeated " +
+                             "SWAP times)")
 
     parser.add_argument("--add", dest="add",
                         type=int,
@@ -48,23 +54,30 @@ if __name__ == '__main__':
 
     parser.add_argument("--relabel", dest="relabel",
                         type=int,
-                        help="Mutation that relabels one node with a label from outside the domain. (Repeated RELABEL times)")
+                        help="Mutation that relabels one node with a label " +
+                             "from outside the domain. (Repeated RELABEL " +
+                             "times)")
 
     parser.add_argument("--spine", dest="spine",
                         type=int,
-                        help="Mutation that reorders a the nodes in a path from the root to the leafs. (Repeated REORDER times)")
+                        help="Mutation that reorders a the nodes in a path " +
+                             "from the root to the leafs. (Repeated REORDER " +
+                             "times)")
 
     parser.add_argument("--reorder", dest="reorder",
                         type=int,
-                        help="Mutation that reorders the descecndants of a given node. (Repeated REORDER times)")
+                        help="Mutation that reorders the descecndants of a " +
+                             "given node. (Repeated REORDER times)")
 
     parser.add_argument("--redundancy", dest="redundancy",
                         type=int,
-                        help="Mutation that adds redudancy to the graph by duplicating nodes. (Repeated REDUNDANCY times)")
+                        help="Mutation that adds redudancy to the graph by " +
+                             "duplicating nodes. (Repeated REDUNDANCY times)")
 
     parser.add_argument("--delete", dest="delete",
                         type=int,
-                        help="Mutation that deletes a branch. (Repeated DELETE times)")
+                        help="Mutation that deletes a branch. (Repeated " +
+                             "DELETE times)")
 
     parser.add_argument("--summary", dest="summary", action="store_true",
                         help="Print a summary of the mutations")
@@ -119,10 +132,10 @@ if __name__ == '__main__':
     if args.delete:
         m.delete_path(args.delete)
 
-    if args.image:
-        g1.generate_dot(args.image)
+    if args.dot:
+        g1.generate_dot(args.dot)
         if mutate_graph:
-            g2.generate_dot(args.image + '_mod')
+            g2.generate_dot(args.dot + '_mod')
 
     if args.summary and mutate_graph:
         m.print_mutations_summary()
