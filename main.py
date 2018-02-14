@@ -1,4 +1,6 @@
 import argparse
+import sys
+
 from copy import deepcopy
 
 from graph import Graph, GraphConfig
@@ -87,6 +89,13 @@ if __name__ == '__main__':
                         help="Print a summary of the mutations")
 
     args = parser.parse_args()
+    
+    # Check there are no conflicts about how to generate the graph
+    if (args.load_graph and (args.size or args.outdegree or args.depth or
+                             args.dag)):
+        print "Error: Specified to generate the graph randomly and also" +\
+              " to load it from a file"
+        sys.exit(0)
 
     load_graph = None
     if args.load_graph:
@@ -98,7 +107,6 @@ if __name__ == '__main__':
         mutate_graph = True
 
     use_lowercase = True
-
     gc = GraphConfig(True,
                      False,
                      args.size,
