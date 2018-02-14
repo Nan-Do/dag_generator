@@ -43,7 +43,7 @@ class Graph:
 
         if file_name[-1] != '/':
             file_name += '/'
-        file_name += "Graph-" + self.id
+        file_name += "graph-" + self.id
 
         if self.mutated:
             file_name += "-mod"
@@ -340,6 +340,10 @@ class Graph:
             dest_node = self.treelevels[level][block][position]
 
             g[orig_node].append(dest_node)
+
+            # Add the leafs
+            for node in set(self.nodes).difference(g):
+                g[node]
 
         return g
 
