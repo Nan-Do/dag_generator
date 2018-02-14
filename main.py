@@ -31,7 +31,7 @@ if __name__ == '__main__':
                         help="Use upper case instead lower case")
 
     parser.add_argument("--dot", dest="dot",
-                        type=str,
+                        action="store_true",
                         help="Generate a dot file of the generated graph")
 
     parser.add_argument("--dag", dest="dag",
@@ -44,6 +44,10 @@ if __name__ == '__main__':
     parser.add_argument("--store-graph", dest="store_graph",
                         action="store_true",
                         help="Store the generated graph")
+
+    parser.add_argument("--output-directory", dest="output_directory",
+                        type=str,
+                        help="Specify the directory for the generated files")
 
     parser.add_argument("--load-graph", dest="load_graph",
                         type=str,
@@ -100,6 +104,10 @@ if __name__ == '__main__':
     load_graph = None
     if args.load_graph:
         load_graph = args.load_graph
+        
+    output_directory = '.'
+    if args.output_directory:
+        output_directory = args.output_directory
 
     mutate_graph = False
     if args.swap or args.add or args.relabel or args.spine or\
@@ -114,21 +122,19 @@ if __name__ == '__main__':
                      args.depth,
                      args.dag,
                      use_lowercase,
-                     None)
+                     None,
+                     output_directory)
     if args.load_graph:
         gc = GraphConfig(False, True, None, None, None,
-                         None, False, args.load_graph)
+                         None, False, args.load_graph,
+                         output_directory)
 
     # Generate the first graph
     g1 = Graph(gc)
 
-    if args.store_graph:
-        g1.store_graph('original_graph')
-
-    # Create a copy of the graph to mutate
+   # Create a copy of the graph to mutate
     if mutate_graph:
         g2 = deepcopy(g1)
-        g2.mutated = True
         m = MutateGraph(g2)
 
     # Do the mutations
@@ -154,10 +160,17 @@ if __name__ == '__main__':
         m.delete_path(args.delete)
 
     if args.dot:
-        g1.generate_dot(args.dot)
+        g1.generate_dot()
         if mutate_graph:
-            g2.generate_dot(args.dot + '_mod')
+            g2.generate_dot()
 
+    if args.store_graph:
+        g1.store_python_representation()
+        g1.store_graph()
+        if mutate_graph:
+            g2.store_python_representation()
+ 
     if args.summary and mutate_graph:
         m.print_mutations_summary()
         m.store_mutations_to_file('mutations')
+

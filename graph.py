@@ -16,7 +16,8 @@ GraphConfig = namedtuple("GraphConfig", ["populate_randomly",
                                          "depth",
                                          "dag_density",
                                          "use_lowercase",
-                                         "file_name"])
+                                         "file_name",
+                                         "output_directory"])
 
 """
 Datatypes to represent the links of the graph, a position is a tuple of three
@@ -31,6 +32,25 @@ GraphLink = namedtuple('GraphLink', ['orig', 'dest'])
 
 
 class Graph:
+    def __generate_file_name(self, ext):
+        """
+        Generate a file name with extesion ext.
+
+        It will take into account the output directory specified at the 
+        construction of the graph.
+        """
+        file_name = self.output_directory
+
+        if file_name[-1] != '/':
+            file_name += '/'
+        file_name += "Graph-" + self.id
+
+        if self.mutated:
+            file_name += "-mod"
+        file_name += '.' + ext
+
+        return file_name
+
     def __generate_pool_nodes(self, size, lower=True):
         """
         Generate a pool of elements that will be used as a nodes for the graph.
@@ -256,15 +276,13 @@ class Graph:
             self.treelinks.append(graph_link)
             num_of_links -= 1
 
-    def generate_dot(self, file_name):
+    def generate_dot(self):
         """
-        Generate the dot representation for the graph and store it at the
-        file_name
+        Generate the dot representation for the graph and store it into a file
+        """
+        file_name = self.__generate_file_name('dot')
 
-        file_name -> string with a file name to store the dot representation of
-                     the graph.
-        """
-        with open(file_name + '.dot', 'w') as f:
+        with open(file_name, 'w') as f:
             f.write('strict digraph {\n')
             for link in self.treelinks:
                 orig_position, dest_position = link
@@ -279,8 +297,10 @@ class Graph:
                                                dest_node))
             f.write('}')
 
-    def store_graph(self, file_name):
-        with open(file_name + ".txt", "w") as f:
+    def store_graph(self):
+        file_name = self.__generate_file_name('txt')
+
+        with open(file_name, "w") as f:
             f.write('Graph {\n')
             f.write('\tId: ')
             f.write(str(self.id))
@@ -322,6 +342,18 @@ class Graph:
             g[orig_node].append(dest_node)
 
         return g
+
+    def store_python_representation(self):
+        file_name = self.__generate_file_name('py')
+        d = self.to_python_dict()
+
+        with open(file_name, 'w') as f:
+            f.write("root = '" + self.nodes[0] + "'")
+            f.write('\n')
+            f.write('links = {\n')
+            for k in d:
+                f.write("\t '{}': {},\n".format(k, d[k]))
+            f.write('\t}\n')
 
     def print_graph(self):
         print self.treelevels
@@ -412,6 +444,7 @@ class Graph:
     def __init__(self, GraphConfig):
         # Data to to represent the graph
         self.nodes = self.treelevels = self.treelinks = self.id = None
+        self.output_directory = GraphConfig.output_directory
         # If you copy the graph (with deepcopy) to be mutated set this
         # variable to True to generate the filenames correctly
         self.mutated = False
