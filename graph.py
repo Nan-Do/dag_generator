@@ -4,6 +4,7 @@ from random import choice, shuffle, normalvariate, randint
 from string import ascii_lowercase, ascii_uppercase, digits
 
 import sys
+import ast
 
 from utils import DEBUG, get_chunks
 
@@ -30,19 +31,6 @@ GraphLink = namedtuple('GraphLink', ['orig', 'dest'])
 
 
 class Graph:
-    def __store_links_into_file(self, f):
-        for link in self.treelinks:
-            orig_position, dest_position = link
-
-            level, block, position = orig_position
-            orig_node = self.treelevels[level][block][position]
-
-            level, block, position = dest_position
-            dest_node = self.treelevels[level][block][position]
-
-            f.write('\t{} -> {};\n'.format(orig_node,
-                                           dest_node))
-
     def __generate_pool_nodes(self, size, lower=True):
         """
         Generate a pool of elements that will be used as a nodes for the graph.
@@ -278,13 +266,38 @@ class Graph:
         """
         with open(file_name + '.dot', 'w') as f:
             f.write('strict digraph {\n')
-            self.__store_links_into_file(f)
+            for link in self.treelinks:
+                orig_position, dest_position = link
+
+                level, block, position = orig_position
+                orig_node = self.treelevels[level][block][position]
+
+                level, block, position = dest_position
+                dest_node = self.treelevels[level][block][position]
+
+                f.write('\t{} -> {};\n'.format(orig_node,
+                                               dest_node))
             f.write('}')
 
     def store_graph(self, file_name):
         with open(file_name + ".txt", "w") as f:
             f.write('Graph {\n')
-            self.__store_links_into_file(f)
+            f.write('\tNodes: ')
+            f.write(str(self.nodes))
+            f.write('\n')
+            f.write('\tLevels: ')
+            f.write(str(self.treelevels))
+            f.write('\n')
+            f.write('\tLinks: ')
+            links_str = ';'.join(map(lambda x: '({},{},{})|({},{},{})'.format(x.orig.level,
+                                                                              x.orig.block,
+                                                                              x.orig.position,
+                                                                              x.dest.level,
+                                                                              x.dest.block,
+                                                                              x.dest.position),
+                                     self.treelinks))
+            f.write(links_str)
+            f.write('\n')
             f.write('}')
 
     def to_python_dict(self):
@@ -312,7 +325,27 @@ class Graph:
         print self.treelinks
 
     def __load_from_file(self, file_name):
-        pass
+        nodes = levels = links = None
+        self.treelinks = list()
+        with open(file_name, 'r') as f:
+            f.readline()
+            nodes = f.readline().split(':')[1].strip()
+            levels = f.readline().split(':')[1].strip()
+            links = f.readline().split(':')[1].strip()
+
+        self.nodes = ast.literal_eval(nodes)
+        self.treelevels = ast.literal_eval(levels)
+        for link in links.split(';'):
+            orig, dest = link.split('|')
+            orig = map(int, orig[1:-1].split(','))
+            dest = map(int, dest[1:-1].split(','))
+            l = GraphLink(Position(orig[0],
+                                   orig[1],
+                                   orig[2]),
+                          Position(dest[0],
+                                   dest[1],
+                                   dest[2]))
+            self.treelinks.append(l)
 
     def __populate_randomly(self, TreeConfig):
         # Check the TreeConfig
@@ -371,6 +404,10 @@ class Graph:
             self.__generate_dag(num_of_dag_links)
 
     def __init__(self, GraphConfig):
+        # Data to to represent the graph
+        self.nodes = self.treelevels = self.treelinks = None
+
+        # Choose the way to build the graph
         if GraphConfig.populate_randomly:
             self.__populate_randomly(GraphConfig)
         elif GraphConfig.from_file:

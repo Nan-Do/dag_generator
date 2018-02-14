@@ -43,6 +43,10 @@ if __name__ == '__main__':
                         action="store_true",
                         help="Store the generated graph")
 
+    parser.add_argument("--load-graph", dest="load_graph",
+                        type=str,
+                        help="Load the graph from a file")
+
     parser.add_argument("--swap", dest="swap",
                         type=int,
                         help="Mutation that swaps two nodes. (Repeated " +
@@ -84,12 +88,17 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+    load_graph = None
+    if args.load_graph:
+        load_graph = args.load_graph
+
     mutate_graph = False
     if args.swap or args.add or args.relabel or args.spine or\
        args.reorder or args.redundancy or args.delete:
         mutate_graph = True
 
     use_lowercase = True
+
     gc = GraphConfig(True,
                      False,
                      args.size,
@@ -98,6 +107,9 @@ if __name__ == '__main__':
                      args.dag,
                      use_lowercase,
                      None)
+    if args.load_graph:
+        gc = GraphConfig(False, True, None, None, None,
+                         None, False, args.load_graph)
 
     # Generate the first graph
     g1 = Graph(gc)
