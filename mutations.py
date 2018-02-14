@@ -383,7 +383,7 @@ class MutateGraph:
 
             print s
 
-    def store_mutations_to_file(self, file_name, field_separator='|'):
+    def store_mutations_to_file(self, file_name, field_separator=' '):
         """
         Store the generated mutations
 
@@ -393,7 +393,21 @@ class MutateGraph:
         with open(file_name + '.txt', 'w') as f:
             for mutation in self.mutations:
                 opcode = mutation[0]
-                operands = field_separator.join(map(str, mutation[1:]))
+                operands = []
+                for op in mutation[1:]:
+                    # Preprocess lists to remove the spaces
+                    # string.translate can also be used to achieve the
+                    # same effect but it is less portable
+                    if isinstance(op, list):
+                        r = ','.join(map(lambda x: "'" + x + "'" if
+                                         isinstance(x, str) else str(x),
+                                         op))
+                        r = '[' + r + ']'
+                        operands.append(r)
+                    else:
+                        operands.append(str(op))
+                # operands = field_separator.join(map(str, mutation[1:]))
+                operands = field_separator.join(operands)
                 f.write(opcode + field_separator + operands + "\n")
 
     def __init__(self, graph):
