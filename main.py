@@ -128,6 +128,7 @@ if __name__ == '__main__':
     # Create a copy of the graph to mutate
     if mutate_graph:
         g2 = deepcopy(g1)
+        g2.mutated = True
         m = MutateGraph(g2)
 
     # Do the mutations

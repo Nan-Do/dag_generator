@@ -6,7 +6,7 @@ from string import ascii_lowercase, ascii_uppercase, digits
 import sys
 import ast
 
-from utils import DEBUG, get_chunks
+from utils import DEBUG, get_chunks, random_id_generator
 
 
 GraphConfig = namedtuple("GraphConfig", ["populate_randomly",
@@ -282,6 +282,9 @@ class Graph:
     def store_graph(self, file_name):
         with open(file_name + ".txt", "w") as f:
             f.write('Graph {\n')
+            f.write('\tId: ')
+            f.write(str(self.id))
+            f.write('\n')
             f.write('\tNodes: ')
             f.write(str(self.nodes))
             f.write('\n')
@@ -325,14 +328,17 @@ class Graph:
         print self.treelinks
 
     def __load_from_file(self, file_name):
-        nodes = levels = links = None
+        nodes = levels = links = g_id = None
         self.treelinks = list()
+
         with open(file_name, 'r') as f:
             f.readline()
+            g_id = f.readline().split(':')[1].strip()
             nodes = f.readline().split(':')[1].strip()
             levels = f.readline().split(':')[1].strip()
             links = f.readline().split(':')[1].strip()
 
+        self.id = int(g_id)
         self.nodes = ast.literal_eval(nodes)
         self.treelevels = ast.literal_eval(levels)
         for link in links.split(';'):
@@ -405,10 +411,14 @@ class Graph:
 
     def __init__(self, GraphConfig):
         # Data to to represent the graph
-        self.nodes = self.treelevels = self.treelinks = None
+        self.nodes = self.treelevels = self.treelinks = self.id = None
+        # If you copy the graph (with deepcopy) to be mutated set this
+        # variable to True to generate the filenames correctly
+        self.mutated = False
 
         # Choose the way to build the graph
         if GraphConfig.populate_randomly:
+            self.id = random_id_generator(8)
             self.__populate_randomly(GraphConfig)
         elif GraphConfig.from_file:
             self.__load_from_file(GraphConfig.file_name)
