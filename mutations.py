@@ -60,6 +60,7 @@ class MutateGraph:
                                    node,
                                    position))
             treelevels[level][block].insert(position, node)
+            self.graph.nodes += (node,)
 
             # Update treelinks
             # Add the new link
