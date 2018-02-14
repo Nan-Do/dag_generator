@@ -413,3 +413,4 @@ class MutateGraph:
     def __init__(self, graph):
         self.mutations = []
         self.graph = graph
+        self.graph.mutated = True
