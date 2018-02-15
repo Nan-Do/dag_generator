@@ -53,10 +53,15 @@ if __name__ == '__main__':
                         type=str,
                         help="Load the graph from a file")
 
-    parser.add_argument("--swap", dest="swap",
+    parser.add_argument("--swap-nodes", dest="swap_nodes",
                         type=int,
                         help="Mutation that swaps two nodes. (Repeated " +
-                             "SWAP times)")
+                             "SWAP_NODES times)")
+
+    parser.add_argument("--swap-links", dest="swap_links",
+                        type=int,
+                        help="Mutation that swaps a father and a child." +
+                             " (Repeated SWAP_LINKS times)")
 
     parser.add_argument("--add", dest="add",
                         type=int,
@@ -110,8 +115,8 @@ if __name__ == '__main__':
         output_directory = args.output_directory
 
     mutate_graph = False
-    if args.swap or args.add or args.relabel or args.spine or\
-       args.reorder or args.redundancy or args.delete:
+    if args.swap_nodes or args.add or args.relabel or args.spine or\
+       args.reorder or args.redundancy or args.delete or args.swap_links:
         mutate_graph = True
 
     use_lowercase = True
@@ -138,8 +143,11 @@ if __name__ == '__main__':
         m = MutateGraph(g2)
 
     # Do the mutations
-    if args.swap:
-        m.swap_nodes(args.swap)
+    if args.swap_nodes:
+        m.swap_nodes(args.swap_nodes)
+
+    if args.swap_links:
+        m.swap_links(args.swap_links)
 
     if args.add:
         m.add_node(args.add)

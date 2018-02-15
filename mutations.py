@@ -46,7 +46,7 @@ class MutateGraph:
                 yield "Adding node: {}, Block: {}, Position: {}".format(node,
                                                                         block,
                                                                         position)
-            elif mutation[0] == "SWAP":
+            elif mutation[0] == "SWAP_NODES":
                 source_node = mutation[1]
                 dest_node = mutation[2]
 
@@ -178,7 +178,7 @@ class MutateGraph:
         """
         Mutation that swaps two nodes from the current graph.
 
-        times -> How many relabelings we must perform.
+        times -> How many swaps we must perform.
         """
         nodes = list(self.graph.nodes)
         shuffle(nodes)
@@ -197,7 +197,7 @@ class MutateGraph:
             source_node = nodes.pop()
             dest_node = nodes.pop()
 
-            self.mutations.append(("SWAP", source_node, dest_node))
+            self.mutations.append(("SWAP_NODES", source_node, dest_node))
             if DEBUG:
                 print "  Swapping nodes ", source_node, dest_node
 
@@ -213,6 +213,37 @@ class MutateGraph:
                     elif dest_node in block:
                         index = block.index(dest_node)
                         block[index] = source_node
+
+    def swap_links(self, times):
+        """
+        Mutation that swaps the to nodes that share a father-child relationship.
+
+        times -> How many swaps we must perform.
+        """
+        link_positions = range(0, len(self.graph.treelinks))
+        shuffle(link_positions)
+
+        if times > len(link_positions):
+            print "Warning::Specifier a higher number than the " +\
+                  "maximum number of swappings"
+            times = len(link_positions)
+
+        for _ in xrange(times):
+            link_position = link_positions.pop()
+            
+            orig, dest = self.graph.treelinks[link_position]
+            source_node = self.graph.treelevels[orig.level][orig.block][orig.position]
+            dest_node = self.graph.treelevels[dest.level][dest.block][dest.position]
+
+            self.mutations.append(("SWAP_NODES", source_node, dest_node))
+            if DEBUG:
+                print "  Swapping nodes ", source_node, dest_node
+
+            orig_block = self.graph.treelevels[orig.level][orig.block]
+            dest_block = self.graph.treelevels[dest.level][dest.block]
+            
+            orig_block[orig.position], dest_block[dest.position] =\
+                orig_block[orig.position], dest_block[dest.position]
 
     def relabel_node(self, times):
         """
