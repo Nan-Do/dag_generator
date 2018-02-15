@@ -132,7 +132,7 @@ if __name__ == '__main__':
     # Generate the first graph
     g1 = Graph(gc)
 
-   # Create a copy of the graph to mutate
+    # Create a copy of the graph to mutate
     if mutate_graph:
         g2 = deepcopy(g1)
         m = MutateGraph(g2)
@@ -169,8 +169,8 @@ if __name__ == '__main__':
         g1.store_graph()
         if mutate_graph:
             g2.store_python_representation()
- 
+
     if args.summary and mutate_graph:
         m.print_mutations_summary()
-        m.store_mutations_to_file('mutations')
-
+        m.store_mutation_opcodes_to_file()
+        m.store_mutations_summary_to_file()

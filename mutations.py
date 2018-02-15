@@ -10,9 +10,92 @@ class MutateGraph:
     """
     This class performs mutations to a graph
     """
+    def __generate_file_name(self):
+        """
+        Generate a file name using the data of the graph being mutated
+
+        Auxiliary function
+        """
+        file_name = self.graph.output_directory
+
+        if file_name[-1] != '/':
+            file_name += '/'
+
+        file_name += 'graph-' + self.graph.id
+
+        return file_name
+
+    def __mutation_string_generator(self):
+        """
+        Generate a string representation of the mutation opcodes.
+
+        Auxiliary function
+        """
+        for mutation in self.mutations:
+            if mutation[0] == "DUPLICATE":
+                to_duplicate = mutation[0]
+                to_remove = mutation[1]
+
+                yield "Duplicating node: {} Removing: {}".format(to_duplicate,
+                                                                 to_remove)
+            elif mutation[0] == "ADD_NODE":
+                block = mutation[1]
+                node = mutation[2]
+                position = mutation[3]
+
+                yield "Adding node: {}, Block: {}, Position: {}".format(node,
+                                                                        block,
+                                                                        position)
+            elif mutation[0] == "SWAP":
+                source_node = mutation[1]
+                dest_node = mutation[2]
+
+                yield "Swapping nodes: {} with {}".format(source_node,
+                                                          dest_node)
+            elif mutation[0] == "RELABEL":
+                node_to_be_changed = mutation[1]
+                node_to_change_to = mutation[2]
+
+                yield "Relabeling node: {}, {}".format(node_to_be_changed,
+                                                       node_to_change_to)
+            elif mutation[0] == "DELETE":
+                orig_node = mutation[1]
+                dest_node = mutation[2]
+
+                yield "Removing link: {}, {}".format(orig_node,
+                                                     dest_node)
+            elif mutation[0] == "REORDER_PATH":
+                nodes = mutation[1]
+                reordered_branch = mutation[2]
+
+                yield "Reordering path: {}, {}".format(nodes,
+                                                       reordered_branch)
+            elif mutation[0] == "REORDER_BLOCK":
+                orig_block = mutation[1]
+                ordered_block = mutation[2]
+
+                yield "Reordering block: {}, {}".format(orig_block,
+                                                        ordered_block)
+            else:
+                yield "UNKNOWN OPERATION: {}".format(mutation)
+
+    def __compute_mutations_score(self):
+        """
+        Compute the expected score for the applied mutations.
+        """
+        score = 0
+
+        for m in self.mutations:
+            if m[0] == 'ADD_NODE':
+                score += 1
+            if m[0] == 'DELETE':
+                score -= 1
+
+        return score
+
     def __get_nodes_to_add(self, new_identifiers):
         """
-        Generates a list of nodes ordered randomly that are not present in the
+        Generate a list of nodes ordered randomly that are not present in the
         current graph.
 
         new_identifiers -> In case all the possible identifies are taken
@@ -164,7 +247,8 @@ class MutateGraph:
                                    node_to_be_changed,
                                    node_to_change_to))
             if DEBUG:
-                print "Changing node:", node_to_be_changed, "for node", node_to_change_to
+                print "Changing node:", node_to_be_changed,\
+                      "for node", node_to_change_to
 
             for level in treelevels:
                     for block in level:
@@ -327,71 +411,36 @@ class MutateGraph:
 
     def print_mutations_summary(self):
         """
-        Show a summary of the applied mutations
+        Show a summary of the applied mutations.
         """
         SPACES = ' ' * 3
-        s = ''
-        print "Mutations:"
-        for mutation in self.mutations:
-            s = SPACES
-            if mutation[0] == "DUPLICATE":
-                to_duplicate = mutation[0]
-                to_remove = mutation[1]
+        print "Mutations for graph " + self.graph.id + ":"
+        for s in self.__mutation_string_generator():
+            print SPACES + s
 
-                s += "Duplicating node: {} Removing: {}".format(to_duplicate,
-                                                                to_remove)
-            elif mutation[0] == "ADD_NODE":
-                block = mutation[1]
-                node = mutation[2]
-                position = mutation[3]
+        print
+        print SPACES + "Score:", str(self.__compute_mutations_score())
 
-                s += "Adding node: {}, Block: {}, Position: {}".format(node,
-                                                                       block,
-                                                                       position)
-            elif mutation[0] == "SWAP":
-                source_node = mutation[1]
-                dest_node = mutation[2]
-
-                s += "Swapping nodes: {} with {}".format(source_node,
-                                                         dest_node)
-            elif mutation[0] == "RELABEL":
-                node_to_be_changed = mutation[1]
-                node_to_change_to = mutation[2]
-
-                s += "Relabeling node: {}, {}".format(node_to_be_changed,
-                                                      node_to_change_to)
-            elif mutation[0] == "DELETE":
-                orig_node = mutation[1]
-                dest_node = mutation[2]
-
-                s += "Removing link: {}, {}".format(orig_node,
-                                                    dest_node)
-            elif mutation[0] == "REORDER_PATH":
-                nodes = mutation[1]
-                reordered_branch = mutation[2]
-
-                s += "Reordering path: {}, {}".format(nodes,
-                                                      reordered_branch)
-            elif mutation[0] == "REORDER_BLOCK":
-                orig_block = mutation[1]
-                ordered_block = mutation[2]
-
-                s += "Reordering block: {}, {}".format(orig_block,
-                                                       ordered_block)
-            else:
-                s += "UNKNOWN OPERATION: {}".format(SPACES,
-                                                    mutation)
-
-            print s
-
-    def store_mutations_to_file(self, file_name, field_separator=' '):
+    def store_mutations_summary_to_file(self):
         """
-        Store the generated mutations
+        Write the summary of the generated mutations into a file
+        """
+        file_name = self.__generate_file_name()
+        with open(file_name + '-mutations.txt', 'w') as f:
+            for s in self.__mutation_string_generator():
+                f.write(s)
+                f.write('\n')
+            f.write("Score: " + str(self.__compute_mutations_score()))
+            f.write('\n')
+    
+    def store_mutation_opcodes_to_file(self, field_separator=' '):
+        """
+        Store the opcodes for the generated mutations
 
-        file_name ->  the name of the file_name to store the mutations
         field_separator -> the separator for the fields.
         """
-        with open(file_name + '.txt', 'w') as f:
+        file_name = self.__generate_file_name()
+        with open(file_name + '-opcodes.txt', 'w') as f:
             for mutation in self.mutations:
                 opcode = mutation[0]
                 operands = []

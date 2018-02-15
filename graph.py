@@ -32,7 +32,7 @@ GraphLink = namedtuple('GraphLink', ['orig', 'dest'])
 
 
 class Graph:
-    def __generate_file_name(self, ext):
+    def __generate_file_name(self, ext, append_before_ext=''):
         """
         Generate a file name with extesion ext.
 
@@ -47,6 +47,10 @@ class Graph:
 
         if self.mutated:
             file_name += "-mod"
+
+        if append_before_ext:
+            file_name += append_before_ext
+
         file_name += '.' + ext
 
         return file_name
@@ -298,7 +302,7 @@ class Graph:
             f.write('}')
 
     def store_graph(self):
-        file_name = self.__generate_file_name('txt')
+        file_name = self.__generate_file_name('txt', '-representation')
 
         with open(file_name, "w") as f:
             f.write('Graph {\n')
@@ -455,11 +459,9 @@ class Graph:
 
         # Choose the way to build the graph
         if GraphConfig.populate_randomly:
-            self.id = random_id_generator(8)
+            self.id = random_id_generator(4)
             self.__populate_randomly(GraphConfig)
         elif GraphConfig.from_file:
             self.__load_from_file(GraphConfig.file_name)
         else:
             raise ValueError("Unknown constructor method for the Graph")
-
-
