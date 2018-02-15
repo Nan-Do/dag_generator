@@ -193,9 +193,9 @@ class MutateGraph:
                   "number possible for the current graph"
             times = len(nodes) / 2
 
-        for _ in xrange(times):
-            source_node = nodes.pop()
-            dest_node = nodes.pop()
+        for x in xrange(times):
+            source_node = nodes[x]
+            dest_node = nodes[x]
 
             self.mutations.append(("SWAP_NODES", source_node, dest_node))
             if DEBUG:
@@ -228,8 +228,8 @@ class MutateGraph:
                   "maximum number of swappings"
             times = len(link_positions)
 
-        for _ in xrange(times):
-            link_position = link_positions.pop()
+        for x in xrange(times):
+            link_position = link_positions[x]
             
             orig, dest = self.graph.treelinks[link_position]
             source_node = self.graph.treelevels[orig.level][orig.block][orig.position]
@@ -243,7 +243,7 @@ class MutateGraph:
             dest_block = self.graph.treelevels[dest.level][dest.block]
             
             orig_block[orig.position], dest_block[dest.position] =\
-                orig_block[orig.position], dest_block[dest.position]
+                dest_block[dest.position], orig_block[orig.position]
 
     def relabel_node(self, times):
         """
@@ -270,9 +270,9 @@ class MutateGraph:
         shuffle(nodes_to_be_changed)
 
         # Perform the relabelings
-        for _ in xrange(times):
-            node_to_be_changed = nodes_to_be_changed.pop()
-            node_to_change_to = nodes_to_add.pop()
+        for x in xrange(times):
+            node_to_be_changed = nodes_to_be_changed[x]
+            node_to_change_to = nodes_to_add[x]
 
             self.mutations.append(("RELABEL",
                                    node_to_be_changed,
