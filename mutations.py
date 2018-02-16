@@ -154,8 +154,8 @@ class MutateGraph:
                 dest = link.dest
                 if dest.level == level and dest.block == block:
                     if dest.position >= position:
+                        father = link.orig
                         if dest.position == position:
-                            father = link.orig
                             link_index = pos
 
                         new_link = GraphLink(father,
