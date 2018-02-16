@@ -52,8 +52,13 @@ class Graph:
             all_nodes.add(dest_node)
             children.add(dest_node)
 
-        root = all_nodes.difference(children).pop()
-        return root
+        # It might be possible that the deleting operation removes all
+        # the links in that case return the empty string
+        root = all_nodes.difference(children)
+        if not root:
+            return ''
+        
+        return root.pop()
             
     def __generate_file_name(self, ext, append_before_ext=''):
         """
