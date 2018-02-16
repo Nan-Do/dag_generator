@@ -32,6 +32,29 @@ GraphLink = namedtuple('GraphLink', ['orig', 'dest'])
 
 
 class Graph:
+    def __find_root(self):
+        """
+        Find the root of the graph.
+
+        In the original graph the root is stored at the firt element of the
+        self.nodes tuple, but after the mutations this can not be warrantied
+        so this auxiliary function finds the root for the python
+        representation.
+        """
+        all_nodes = set()
+        children = set()
+        for link in self.treelinks:
+            orig, dest = link
+            orig_node = self.treelevels[orig.level][orig.block][orig.position]
+            dest_node = self.treelevels[dest.level][dest.block][dest.position]
+            
+            all_nodes.add(orig_node)
+            all_nodes.add(dest_node)
+            children.add(dest_node)
+
+        root = all_nodes.difference(children).pop()
+        return root
+            
     def __generate_file_name(self, ext, append_before_ext=''):
         """
         Generate a file name with extesion ext.
@@ -368,7 +391,7 @@ class Graph:
         d = self.to_python_dict()
 
         with open(file_name, 'w') as f:
-            f.write("root = '" + self.nodes[0] + "'")
+            f.write("root = '" + self.__find_root() + "'")
             f.write('\n')
             f.write('links = {\n')
             for k in d:
