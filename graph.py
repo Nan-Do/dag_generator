@@ -154,6 +154,9 @@ class Graph:
         """
         res = [[[root]], [nodelists[0]]]
 
+        if depth <= 2:
+            depth = 3
+
         lists_per_level = (len(nodelists) - 1) / (depth - 2)
         if lists_per_level <= 0:
             print "Warning::The specified depth is too big"
@@ -302,6 +305,12 @@ class Graph:
             f.write('}')
 
     def store_graph(self):
+        """
+        Store the representation of the graph into a file.
+
+        This function stores a convinient representation of the graph
+        so it can be reloaded later.
+        """
         file_name = self.__generate_file_name('txt', '-representation')
 
         with open(file_name, "w") as f:
@@ -352,6 +361,9 @@ class Graph:
         return g
 
     def store_python_representation(self):
+        """
+        Store the graph as a python dictionary.
+        """
         file_name = self.__generate_file_name('py')
         d = self.to_python_dict()
 
@@ -368,6 +380,9 @@ class Graph:
         print self.treelinks
 
     def __load_from_file(self, file_name):
+        """
+        Constructor to load the graph from a file.
+        """
         nodes = levels = links = g_id = None
         self.treelinks = list()
 
@@ -394,6 +409,10 @@ class Graph:
             self.treelinks.append(l)
 
     def __populate_randomly(self, TreeConfig):
+        """
+        Constructor to build the graph using the 
+        specified parameters.
+        """
         # Check the TreeConfig
         size = TreeConfig.size
         outdegree = TreeConfig.outdegree
