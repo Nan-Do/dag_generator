@@ -301,6 +301,10 @@ class MutateGraph:
             print "Warning::No more branchs to delete"
             return
 
+        if times > treelinks:
+            print "Warning::Specified to remove more links than the ones that are available"
+            times = len(treelinks)
+
         orig_link = choice(treelinks)
         if start_from_root:
             root = Position(0, 0, 0)
@@ -312,28 +316,33 @@ class MutateGraph:
         if DEBUG:
             print "Removing branch:"
 
-        while frontier:
-            link = frontier.pop()
-            treelinks.remove(link)
+        while times > 0:
+            if not frontier:
+                frontier = [choice(treelinks)]
 
-            orig = link.orig
-            dest = link.dest
-            orig_node = treelevels[orig.level][orig.block][orig.position]
-            dest_node = treelevels[dest.level][dest.block][dest.position]
+            while frontier:
+                link = frontier.pop()
+                treelinks.remove(link)
 
-            self.mutations.append(("DELETE", orig_node, dest_node))
-            if DEBUG:
-                print "Removing link from node ", orig_node, "to", dest_node
+                orig = link.orig
+                dest = link.dest
+                orig_node = treelevels[orig.level][orig.block][orig.position]
+                dest_node = treelevels[dest.level][dest.block][dest.position]
 
-            # There is still a path that can reach the current dest node
-            # no need to remove its descecndants
-            if filter(lambda x: x.dest == dest, treelinks):
-                continue
+                times -= 1
+                self.mutations.append(("DELETE", orig_node, dest_node))
+                if DEBUG:
+                    print "Removing link from node ", orig_node, "to", dest_node
 
-            # Get all the links that start on the dest node
-            links = filter(lambda x: x.orig == dest, treelinks)
+                # There is still a path that can reach the current dest node
+                # no need to remove its descecndants
+                if filter(lambda x: x.dest == dest, treelinks):
+                    continue
 
-            frontier.extend(links)
+                # Get all the links that start on the dest node
+                links = filter(lambda x: x.orig == dest, treelinks)
+
+                frontier.extend(links)
 
     def reorder_path(self, start_from_root=True):
         """
