@@ -82,13 +82,33 @@ class MutateGraph:
     def __compute_mutations_score(self):
         """
         Compute the expected score for the applied mutations.
+
+        This function computes the expected result for the applied
+        mutations. With the current scoring functions the score
+        is computed in terms of the difference of number of nodes
+        That means that the addition always adds one element and
+        the deletion removes one if it deletes a node. This is
+        not always warrantied as we are dealing with dags and
+        there might be more than one way to reach a node.
         """
         score = 0
 
         for m in self.mutations:
             if m[0] == 'ADD_NODE':
                 score += 1
+
             if m[0] == 'DELETE':
+                dest_node = m[2]
+                skip_mutation = False
+                t = self.graph.treelevels
+
+                for link in self.graph.treelinks:
+                    level, block, position = link.dest
+                    if dest_node == t[level][block][position]:
+                        skip_mutation = True
+                        break
+                if skip_mutation:
+                    continue
                 score -= 1
 
         return score
