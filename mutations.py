@@ -25,6 +25,18 @@ class MutateGraph:
 
         return file_name
 
+    def __compute_graph_nodes(self, graph):
+        nodes = set()
+        t = self.graph.treelevels
+        for link in graph.treelinks:
+            level, block, position = link.orig
+            nodes.add(t[level][block][position])
+
+            level, block, position = link.dest
+            nodes.add(t[level][block][position])
+
+        return nodes
+
     def __mutation_string_generator(self):
         """
         Generate a string representation of the mutation opcodes.
@@ -91,11 +103,14 @@ class MutateGraph:
         not always warrantied as we are dealing with dags and
         there might be more than one way to reach a node.
         """
-        score = 0
+        # score = 0
+        added_nodes = set()
+        deleted_nodes = set()
 
         for m in self.mutations:
             if m[0] == 'ADD_NODE':
-                score += 1
+                # score += 1
+                added_nodes.add(m[2])
 
             if m[0] == 'DELETE':
                 dest_node = m[2]
@@ -109,9 +124,14 @@ class MutateGraph:
                         break
                 if skip_mutation:
                     continue
-                score -= 1
+                # score -= 1
+                if m[2] in added_nodes:
+                    added_nodes.remove(dest_node)
+                    continue
+                deleted_nodes.add(dest_node)
 
-        return score
+        # return abs(len(added_nodes) - len(deleted_nodes))
+        return abs(len(added_nodes) + len(deleted_nodes))
 
     def __get_nodes_to_add(self, new_identifiers):
         """
