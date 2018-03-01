@@ -341,7 +341,7 @@ class MutateGraph:
             print "Warning::No more branchs to delete"
             return
 
-        if times > treelinks:
+        if times > len(treelinks):
             print "Warning::Specified to remove more links than the ones that are available"
             times = len(treelinks)
 
@@ -357,6 +357,11 @@ class MutateGraph:
             print "Removing branch:"
 
         while times > 0:
+            if len(treelinks) == 1:
+                print "Warning::The graph contains only link aborting " +\
+                      "the deleteion"
+                return
+
             if not frontier:
                 frontier = [choice(treelinks)]
 
