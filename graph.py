@@ -16,6 +16,7 @@ GraphConfig = namedtuple("GraphConfig", ["populate_randomly",
                                          "depth",
                                          "dag_density",
                                          "use_lowercase",
+                                         "generate_link_labels",
                                          "file_name",
                                          "output_directory"])
 
@@ -28,7 +29,7 @@ A GraphLink is a tuple of two Positions the first one being the origin of the
 link and the second the end of the link.
 """
 Position = namedtuple('Position', ['level', 'block', 'position'])
-GraphLink = namedtuple('GraphLink', ['orig', 'dest'])
+GraphLink = namedtuple('GraphLink', ['orig', 'dest', 'label'])
 
 
 class Graph:
@@ -44,10 +45,10 @@ class Graph:
         all_nodes = set()
         children = set()
         for link in self.treelinks:
-            orig, dest = link
+            orig, dest, _ = link
             orig_node = self.treelevels[orig.level][orig.block][orig.position]
             dest_node = self.treelevels[dest.level][dest.block][dest.position]
-            
+
             all_nodes.add(orig_node)
             all_nodes.add(dest_node)
             children.add(dest_node)
@@ -57,14 +58,14 @@ class Graph:
         root = all_nodes.difference(children)
         if not root:
             return ''
-        
+
         return root.pop()
-            
+
     def __generate_file_name(self, ext, append_before_ext=''):
         """
         Generate a file name with extesion ext.
 
-        It will take into account the output directory specified at the 
+        It will take into account the output directory specified at the
         construction of the graph.
         """
         file_name = self.output_directory
@@ -194,6 +195,12 @@ class Graph:
                                      lists_per_level,
                                      lists_per_level))
 
+    def __is_normalized(self):
+        for x, y in get_chunks(self.treelevels, 2, 1):
+            if len(y) > len(list(chain.from_iterable(x))):
+                return False
+        return True
+
     def __normalize_treelevels(self):
         """
         Normalize the treelevels so they can be used to generate the tree without
@@ -243,7 +250,10 @@ class Graph:
         for block, b in enumerate(self.treelevels[1]):
             for position, x in enumerate(b):
                 dest = Position(1, block, position)
-                tree_links.append(GraphLink(root, dest))
+                label = None
+                if self.link_labels:
+                    label = choice(self.link_labels)
+                tree_links.append(GraphLink(root, dest, label))
 
         for level, (x, y) in enumerate(get_chunks(self.treelevels[1:], 2),
                                        start=1):
@@ -263,8 +273,12 @@ class Graph:
                     dest_position = Position(level + 1,
                                              dest_block,
                                              dest_position)
+                    label = None
+                    if self.link_labels:
+                        label = choice(self.link_labels)
                     tree_links.append(GraphLink(orig_position,
-                                                dest_position))
+                                                dest_position,
+                                                label))
 
         return tree_links
 
@@ -298,12 +312,14 @@ class Graph:
             # if dest_level == source_level + 1:
             #     continue
 
+            label = choice(self.link_labels)
             graph_link = GraphLink(Position(source_level,
                                             source_block,
                                             source_position),
                                    Position(dest_level,
                                             dest_block,
-                                            dest_position))
+                                            dest_position),
+                                   label)
             # Check that the link doestn't exist already
             if graph_link in self.treelinks:
                 continue
@@ -320,7 +336,7 @@ class Graph:
         with open(file_name, 'w') as f:
             f.write('strict digraph {\n')
             for link in self.treelinks:
-                orig_position, dest_position = link
+                orig_position, dest_position, label = link
 
                 level, block, position = orig_position
                 orig_node = self.treelevels[level][block][position]
@@ -328,8 +344,14 @@ class Graph:
                 level, block, position = dest_position
                 dest_node = self.treelevels[level][block][position]
 
-                f.write('\t{} -> {};\n'.format(orig_node,
-                                               dest_node))
+                if label:
+                    f.write('\t{} -> {} [ label="{}" ];\n'.format(orig_node,
+                                                                  dest_node,
+                                                                  label))
+                else:
+                    f.write('\t{} -> {};\n'.format(orig_node,
+                                                   dest_node))
+
             f.write('}')
 
     def store_graph(self):
@@ -353,12 +375,13 @@ class Graph:
             f.write(str(self.treelevels))
             f.write('\n')
             f.write('\tLinks: ')
-            links_str = ';'.join(map(lambda x: '({},{},{})|({},{},{})'.format(x.orig.level,
-                                                                              x.orig.block,
-                                                                              x.orig.position,
-                                                                              x.dest.level,
-                                                                              x.dest.block,
-                                                                              x.dest.position),
+            links_str = ';'.join(map(lambda x: '({},{},{})|({},{},{})|{}'.format(x.orig.level,
+                                                                                 x.orig.block,
+                                                                                 x.orig.position,
+                                                                                 x.dest.level,
+                                                                                 x.dest.block,
+                                                                                 x.dest.position,
+                                                                                 x.label),
                                      self.treelinks))
             f.write(links_str)
             f.write('\n')
@@ -371,36 +394,46 @@ class Graph:
         Returns a default dict containing the representation of the graph
         as adjacency lists.
         """
-        g = defaultdict(list)
+        graph = defaultdict(list)
+        link_labels = defaultdict(set)
 
-        for (orig_position, dest_position) in self.treelinks:
+        for (orig_position, dest_position, label) in self.treelinks:
             level, block, position = orig_position
             orig_node = self.treelevels[level][block][position]
 
             level, block, position = dest_position
             dest_node = self.treelevels[level][block][position]
 
-            g[orig_node].append(dest_node)
+            link_labels[label].add((orig_node, dest_node))
+
+            graph[orig_node].append(dest_node)
 
             # Add the leafs
-            for node in set(self.nodes).difference(g):
-                g[node]
+            for node in set(self.nodes).difference(graph):
+                graph[node]
 
-        return g
+        return graph, link_labels
 
     def store_python_representation(self):
         """
         Store the graph as a python dictionary.
         """
         file_name = self.__generate_file_name('py')
-        d = self.to_python_dict()
+        graph, labels = self.to_python_dict()
 
         with open(file_name, 'w') as f:
             f.write("root = '" + self.__find_root() + "'")
-            f.write('\n')
+            f.write('\n\n')
+
+            f.write('labels = {\n')
+            if self.link_labels:
+                for k in labels:
+                    f.write("\t  '{}': {},\n".format(k, labels[k]))
+            f.write('\t }\n\n')
+
             f.write('links = {\n')
-            for k in d:
-                f.write("\t '{}': {},\n".format(k, d[k]))
+            for k in graph:
+                f.write("\t '{}': {},\n".format(k, graph[k]))
             f.write('\t}\n')
 
     def print_graph(self):
@@ -421,11 +454,11 @@ class Graph:
             levels = f.readline().split(':')[1].strip()
             links = f.readline().split(':')[1].strip()
 
-        self.id = int(g_id)
+        self.id = g_id
         self.nodes = ast.literal_eval(nodes)
         self.treelevels = ast.literal_eval(levels)
         for link in links.split(';'):
-            orig, dest = link.split('|')
+            orig, dest, label = link.split('|')
             orig = map(int, orig[1:-1].split(','))
             dest = map(int, dest[1:-1].split(','))
             l = GraphLink(Position(orig[0],
@@ -433,12 +466,13 @@ class Graph:
                                    orig[2]),
                           Position(dest[0],
                                    dest[1],
-                                   dest[2]))
+                                   dest[2]),
+                          label)
             self.treelinks.append(l)
 
     def __populate_randomly(self, TreeConfig):
         """
-        Constructor to build the graph using the 
+        Constructor to build the graph using the
         specified parameters.
         """
         # Check the TreeConfig
@@ -466,16 +500,26 @@ class Graph:
             print "Number of nodes for the graph:", number_of_nodes, '/', size
             print
 
-        self.treelevels = self.__generate_treelevels(root,
-                                                     lists_of_nodes,
-                                                     depth)
+        counter = 1
+        while (True):
+            if (counter % 100) == 0:
+                counter = 1
+                lists_of_nodes = self.__generate_nodelists(pool_of_nodes,
+                                                           num_of_lists,
+                                                           outdegree)
+            self.treelevels = self.__generate_treelevels(root,
+                                                         lists_of_nodes,
+                                                         depth)
+            counter += 1
+            if self.__is_normalized():
+                break
 
         if DEBUG:
             print "Generated Lists:"
             for pos, x in enumerate(self.treelevels):
                 print '  ', pos, x
             print
-        self.__normalize_treelevels()
+        # self.__normalize_treelevels()
 
         if DEBUG:
             print "Normalized Lists:"
@@ -503,6 +547,10 @@ class Graph:
         # If you copy the graph (with deepcopy) to be mutated set this
         # variable to True to generate the filenames correctly
         self.mutated = False
+        # Set labels
+        self.link_labels = None
+        if GraphConfig.generate_link_labels:
+            self.link_labels = map(lambda x: 'A' + str(x), xrange(4))
 
         # Choose the way to build the graph
         if GraphConfig.populate_randomly:
@@ -510,5 +558,3 @@ class Graph:
             self.__populate_randomly(GraphConfig)
         elif GraphConfig.from_file:
             self.__load_from_file(GraphConfig.file_name)
-        else:
-            raise ValueError("Unknown constructor method for the Graph")

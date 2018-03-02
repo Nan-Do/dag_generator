@@ -34,6 +34,11 @@ if __name__ == '__main__':
                         action="store_true",
                         help="Generate a dot file of the generated graph")
 
+    parser.add_argument("--link-labels", dest="link_labels",
+                        action="store_true",
+                        help="Generate labels for the links of the generated" +
+                             " graph")
+
     parser.add_argument("--dag", dest="dag",
                         type=str,
                         default="none",
@@ -100,11 +105,11 @@ if __name__ == '__main__':
     args = parser.parse_args()
     
     # Check there are no conflicts about how to generate the graph
-    if (args.load_graph and (args.size or args.outdegree or args.depth or
-                             args.dag)):
-        print "Error: Specified to generate the graph randomly and also" +\
-              " to load it from a file"
-        sys.exit(0)
+    # if (args.load_graph and (args.size or args.outdegree or args.depth or
+    #                          args.dag)):
+    #     print "Error: Specified to generate the graph randomly and also" +\
+    #           " to load it from a file"
+    #     sys.exit(0)
 
     load_graph = None
     if args.load_graph:
@@ -119,6 +124,10 @@ if __name__ == '__main__':
        args.reorder or args.redundancy or args.delete or args.swap_links:
         mutate_graph = True
 
+    link_labels = False
+    if args.link_labels:
+        link_labels = True
+
     use_lowercase = True
     gc = GraphConfig(True,
                      False,
@@ -127,20 +136,20 @@ if __name__ == '__main__':
                      args.depth,
                      args.dag,
                      use_lowercase,
+                     link_labels,
                      None,
                      output_directory)
     if args.load_graph:
         gc = GraphConfig(False, True, None, None, None,
-                         None, False, args.load_graph,
+                         None, False, False, args.load_graph,
                          output_directory)
 
     # Generate the first graph
     g1 = Graph(gc)
 
     # Create a copy of the graph to mutate
-    if mutate_graph:
-        g2 = deepcopy(g1)
-        m = MutateGraph(g2)
+    g2 = deepcopy(g1)
+    m = MutateGraph(g2)
 
     # Do the mutations
     if args.swap_nodes:
@@ -172,13 +181,14 @@ if __name__ == '__main__':
         if mutate_graph:
             g2.generate_dot()
 
-    if args.store_graph:
-        g1.store_python_representation()
-        g1.store_graph()
-        if mutate_graph:
-            g2.store_python_representation()
-
-    if args.summary and mutate_graph:
+    if args.summary:
         m.print_mutations_summary()
         m.store_mutation_opcodes_to_file()
         m.store_mutations_summary_to_file()
+
+    if args.store_graph:
+        g1.store_python_representation()
+        g1.store_graph()
+        g2.store_python_representation()
+
+
