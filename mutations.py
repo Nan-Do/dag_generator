@@ -54,10 +54,12 @@ class MutateGraph:
                 block = mutation[1]
                 node = mutation[2]
                 position = mutation[3]
+                label = mutation[4]
 
-                yield "Adding node: {}, Block: {}, Position: {}".format(node,
-                                                                        block,
-                                                                        position)
+                yield "Adding node: {}, Block: {}, Position: {}, Label: {}".format(node,
+                                                                                   block,
+                                                                                   position,
+                                                                                   label)
             elif mutation[0] == "SWAP_NODES":
                 source_node = mutation[1]
                 dest_node = mutation[2]
@@ -173,6 +175,7 @@ class MutateGraph:
             level = randint(1, len(treelevels) - 1)
             block = randint(0, len(treelevels[level]) - 1)
             position = randint(0, len(treelevels[level][block]) - 1)
+            new_label = self.graph.get_random_label()
 
             if DEBUG:
                 print "  Adding node ", node, "to block",\
@@ -181,7 +184,8 @@ class MutateGraph:
             self.mutations.append(("ADD_NODE",
                                    list(treelevels[level][block]),
                                    node,
-                                   position))
+                                   position,
+                                   new_label))
             treelevels[level][block].insert(position, node)
             self.graph.nodes += (node,)
 
@@ -192,6 +196,7 @@ class MutateGraph:
             new_treelinks = []
             for pos, link in enumerate(self.graph.treelinks):
                 dest = link.dest
+                label = link.label
                 if dest.level == level and dest.block == block:
                     if dest.position >= position:
                         father = link.orig
@@ -201,7 +206,8 @@ class MutateGraph:
                         new_link = GraphLink(father,
                                              Position(level,
                                                       block,
-                                                      dest.position + 1))
+                                                      dest.position + 1),
+                                             label)
                         new_treelinks.append(new_link)
                         continue
 
@@ -210,7 +216,8 @@ class MutateGraph:
             new_link = GraphLink(father,
                                  Position(level,
                                           block,
-                                          position))
+                                          position),
+                                 new_label)
             new_treelinks.insert(link_index, new_link)
             self.graph.treelinks = new_treelinks
 
@@ -271,7 +278,7 @@ class MutateGraph:
         for x in xrange(times):
             link_position = link_positions[x]
             
-            orig, dest = self.graph.treelinks[link_position]
+            orig, dest, _ = self.graph.treelinks[link_position]
             source_node = self.graph.treelevels[orig.level][orig.block][orig.position]
             dest_node = self.graph.treelevels[dest.level][dest.block][dest.position]
 

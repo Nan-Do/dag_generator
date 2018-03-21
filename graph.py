@@ -440,6 +440,18 @@ class Graph:
         print self.treelevels
         print self.treelinks
 
+    def get_random_label(self):
+        """
+        This function returns a random label if the graph.
+        If the graph was generated without labels return None which is
+        the value expected by the rest of the functions specify the lack
+        of a label
+        """
+        if self.link_labels:
+            return choice(self.link_labels)
+
+        return None
+
     def __load_from_file(self, file_name):
         """
         Constructor to load the graph from a file.
