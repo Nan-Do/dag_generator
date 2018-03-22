@@ -1,5 +1,6 @@
 from itertools import chain
 from random import shuffle, choice, randint
+
 from string import ascii_lowercase, ascii_uppercase, digits
 
 from graph import Position, GraphLink
@@ -45,8 +46,8 @@ class MutateGraph:
         """
         for mutation in self.mutations:
             if mutation[0] == "DUPLICATE":
-                to_duplicate = mutation[0]
-                to_remove = mutation[1]
+                to_duplicate = mutation[1]
+                to_remove = mutation[2]
 
                 yield "Duplicating node: {} Removing: {}".format(to_duplicate,
                                                                  to_remove)
@@ -483,10 +484,10 @@ class MutateGraph:
         treelevels = self.graph.treelevels
 
         for _ in xrange(times):
-            nodes = chain.from_iterable(chain.from_iterable(treelevels))
+            nodes = list(self.graph.nodes)
             shuffle(nodes)
-            to_duplicate = nodes[0]
-            to_remove = nodes[1]
+            to_duplicate = nodes.pop()
+            to_remove = nodes.pop()
 
             self.mutations.append(("DUPLICATE", to_duplicate, to_remove))
             if DEBUG:
