@@ -66,17 +66,26 @@ if __name__ == '__main__':
     parser.add_argument("--swap-link-nodes", dest="swap_link_nodes",
                         type=int,
                         help="Mutation that swaps a father and a child." +
-                             " (Repeated SWAP_LINKS times)")
+                             " (Repeated SWAP_LINKS_NODES times)")
+
+    parser.add_argument("--swap-link-labels", dest="swap_link_labels",
+                        type=int,
+                        help="Mutation that swaps the labels between two " +
+                             " links (Repeated SWAP_LINKS_LABELS times)")
 
     parser.add_argument("--add", dest="add",
                         type=int,
                         help="Mutation that adds a node. (Repeated ADD times)")
 
-    parser.add_argument("--relabel", dest="relabel",
+    parser.add_argument("--rename-nodes", dest="rename_nodes",
                         type=int,
-                        help="Mutation that relabels one node with a label " +
-                             "from outside the domain. (Repeated RELABEL " +
-                             "times)")
+                        help="Mutation that renames a node with an non used " +
+                             "identifier. (Repeated RENAME_NODE times)")
+
+    parser.add_argument("--rename-links", dest="rename_links",
+                        type=int,
+                        help="Mutation that renames a link with another " +
+                             "valid label. (Repeated RENAME_LINK times)")
 
     parser.add_argument("--spine", dest="spine",
                         type=int,
@@ -120,8 +129,9 @@ if __name__ == '__main__':
         output_directory = args.output_directory
 
     mutate_graph = False
-    if args.swap_nodes or args.add or args.relabel or args.spine or\
-       args.reorder or args.redundancy or args.delete or args.swap_link_nodes:
+    if args.swap_nodes or args.add or args.rename_nodes or args.spine or\
+       args.reorder or args.redundancy or args.delete or args.rename_links or\
+       args.swap_link_nodes or args.swap_link_labels:
         mutate_graph = True
 
     link_labels = False
@@ -161,8 +171,11 @@ if __name__ == '__main__':
     if args.add:
         m.add_node(args.add)
 
-    if args.relabel:
-        m.relabel_node(args.relabel)
+    if args.rename_nodes:
+        m.rename_node(args.rename_nodes)
+
+    if args.rename_links:
+        m.rename_link_label(args.rename_links)
 
     if args.spine:
         m.reorder_path(args.spine)
@@ -175,6 +188,9 @@ if __name__ == '__main__':
 
     if args.delete:
         m.delete_path(args.delete)
+
+    if args.swap_link_labels:
+        m.swap_link_labels(args.swap_link_labels)
 
     if args.dot:
         g1.generate_dot()

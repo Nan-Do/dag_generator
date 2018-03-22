@@ -67,12 +67,43 @@ class MutateGraph:
 
                 yield "Swapping nodes: {} with {}".format(source_node,
                                                           dest_node)
-            elif mutation[0] == "RELABEL":
+            elif mutation[0] == "SWAP_LABELS":
+                source_node1 = mutation[1]
+                dest_node1 = mutation[2]
+                label1 = mutation[3]
+                source_node2 = mutation[4]
+                dest_node2 = mutation[5]
+                label2 = mutation[6]
+
+                orig_link_str = "{}:({}-{})".format(label1,
+                                                    source_node1,
+                                                    dest_node1)
+                dest_link_str = "{}:({}-{})".format(label2,
+                                                    source_node2,
+                                                    dest_node2)
+
+                yield "Swapping labels: {} with {} ".format(orig_link_str,
+                                                            dest_link_str)
+
+            elif mutation[0] == "RENAME_LABEL":
+                source_node = mutation[1]
+                dest_node = mutation[2]
+                label = mutation[3]
+                new_label = mutation[4]
+
+                link_str = "{}:({}-{})".format(label,
+                                               source_node,
+                                               dest_node)
+
+                yield "Renaming label: {} to {} ".format(link_str,
+                                                         new_label)
+
+            elif mutation[0] == "RENAME_NODE":
                 node_to_be_changed = mutation[1]
                 node_to_change_to = mutation[2]
 
-                yield "Relabeling node: {}, {}".format(node_to_be_changed,
-                                                       node_to_change_to)
+                yield "Renaming node: {}, {}".format(node_to_be_changed,
+                                                     node_to_change_to)
             elif mutation[0] == "DELETE":
                 orig_node = mutation[1]
                 dest_node = mutation[2]
@@ -262,17 +293,18 @@ class MutateGraph:
                         index = block.index(dest_node)
                         block[index] = source_node
 
-    def swap_links(self, times):
+    def swap_link_nodes(self, times):
         """
         Mutation that swaps the to nodes that share a father-child relationship.
 
         times -> How many swaps we must perform.
         """
+        treelevels = self.graph.treelevels
         link_positions = range(0, len(self.graph.treelinks))
         shuffle(link_positions)
 
         if times > len(link_positions):
-            print "Warning::Specifier a higher number than the " +\
+            print "warning::specified a higher number than the " +\
                   "maximum number of swappings"
             times = len(link_positions)
 
@@ -280,8 +312,8 @@ class MutateGraph:
             link_position = link_positions[x]
             
             orig, dest, _ = self.graph.treelinks[link_position]
-            source_node = self.graph.treelevels[orig.level][orig.block][orig.position]
-            dest_node = self.graph.treelevels[dest.level][dest.block][dest.position]
+            source_node = treelevels[orig.level][orig.block][orig.position]
+            dest_node = treelevels[dest.level][dest.block][dest.position]
 
             self.mutations.append(("SWAP_NODES", source_node, dest_node))
             if DEBUG:
@@ -293,11 +325,77 @@ class MutateGraph:
             orig_block[orig.position], dest_block[dest.position] =\
                 dest_block[dest.position], orig_block[orig.position]
 
-    def relabel_node(self, times):
-        """
-        Mutation that relabels a node whitin the graph.
+    def swap_link_labels(self, times):
+        treelevels = self.graph.treelevels
+        link_positions = range(0, len(self.graph.treelinks))
+        shuffle(link_positions)
 
-        times -> How many relabelings we must perform.
+        if times > len(link_positions) / 2:
+            print "Warning::Specified a higher number than the " +\
+                  "maximum number of swappings"
+            times = len(link_positions) / 2
+
+        for _ in xrange(times):
+            link1 = link_positions.pop()
+            link2 = link_positions.pop()
+
+            orig1, dest1, label1 = self.graph.treelinks[link1]
+            orig2, dest2, label2 = self.graph.treelinks[link2]
+
+            source_node1 = treelevels[orig1.level][orig1.block][orig1.position]
+            dest_node1 = treelevels[dest1.level][dest1.block][dest1.position]
+
+            source_node2 = treelevels[orig2.level][orig2.block][orig2.position]
+            dest_node2 = treelevels[dest2.level][dest2.block][dest2.position]
+
+            self.mutations.append(("SWAP_LABELS", source_node1, dest_node1,
+                                   label1, source_node2, dest_node2, label2))
+            if DEBUG:
+                orig_link_str = "{}:({}-{})".format(label1,
+                                                    source_node1,
+                                                    dest_node1)
+                dest_link_str = "{}:({}-{})".format(label2,
+                                                    source_node2,
+                                                    dest_node2)
+                print "  Swapping labels ", orig_link_str, dest_link_str
+
+            self.graph.treelinks[link1] = (orig1, dest1, label2)
+            self.graph.treelinks[link2] = (orig2, dest2, label1)
+
+    def rename_link_label(self, times):
+        treelevels = self.graph.treelevels
+        link_positions = range(0, len(self.graph.treelinks))
+        shuffle(link_positions)
+
+        if times > len(link_positions):
+            print "warning::specified a higher number than the " +\
+                  "maximum number of swappings"
+            times = len(link_positions)
+
+        for _ in xrange(times):
+            link = link_positions.pop()
+
+            orig, dest, label = self.graph.treelinks[link]
+
+            source_node = treelevels[orig.level][orig.block][orig.position]
+            dest_node = treelevels[dest.level][dest.block][dest.position]
+            new_label = self.graph.get_random_label()
+
+            self.mutations.append(("RENAME_LABEL", source_node, dest_node,
+                                   label, new_label))
+            if DEBUG:
+                link_str = "{}:({}-{})".format(label,
+                                               source_node,
+                                               dest_node)
+                print "  Renaming label ", link_str, new_label
+
+            self.graph.treelinks[link] = (orig, dest, new_label)
+
+    def rename_node(self, times):
+        """
+        Mutation that renamings a node whitin the graph.
+
+        times -> How many renamings we must perform.
 
         The mutation occurs changing one of the node identifiers with an
         identifier that has not been used. If all the identifiers have been
@@ -317,12 +415,12 @@ class MutateGraph:
         nodes_to_be_changed = list(self.graph.nodes)
         shuffle(nodes_to_be_changed)
 
-        # Perform the relabelings
+        # Perform the renamings
         for x in xrange(times):
             node_to_be_changed = nodes_to_be_changed[x]
             node_to_change_to = nodes_to_add[x]
 
-            self.mutations.append(("RELABEL",
+            self.mutations.append(("RENAME_NODE",
                                    node_to_be_changed,
                                    node_to_change_to))
             if DEBUG:
