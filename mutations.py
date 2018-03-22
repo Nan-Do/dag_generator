@@ -310,7 +310,7 @@ class MutateGraph:
 
         for x in xrange(times):
             link_position = link_positions[x]
-            
+
             orig, dest, _ = self.graph.treelinks[link_position]
             source_node = treelevels[orig.level][orig.block][orig.position]
             dest_node = treelevels[dest.level][dest.block][dest.position]
@@ -321,7 +321,7 @@ class MutateGraph:
 
             orig_block = self.graph.treelevels[orig.level][orig.block]
             dest_block = self.graph.treelevels[dest.level][dest.block]
-            
+
             orig_block[orig.position], dest_block[dest.position] =\
                 dest_block[dest.position], orig_block[orig.position]
 
@@ -623,7 +623,7 @@ class MutateGraph:
                 f.write('\n')
             f.write("Score: " + str(self.__compute_mutations_score()))
             f.write('\n')
-    
+
     def store_mutation_opcodes_to_file(self, field_separator=' '):
         """
         Store the opcodes for the generated mutations

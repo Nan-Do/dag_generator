@@ -112,7 +112,7 @@ if __name__ == '__main__':
                         help="Print a summary of the mutations")
 
     args = parser.parse_args()
-    
+
     # Check there are no conflicts about how to generate the graph
     # if (args.load_graph and (args.size or args.outdegree or args.depth or
     #                          args.dag)):
@@ -123,7 +123,7 @@ if __name__ == '__main__':
     load_graph = None
     if args.load_graph:
         load_graph = args.load_graph
-        
+
     output_directory = '.'
     if args.output_directory:
         output_directory = args.output_directory
@@ -206,5 +206,3 @@ if __name__ == '__main__':
         g1.store_python_representation()
         g1.store_graph()
         g2.store_python_representation()
-
-
