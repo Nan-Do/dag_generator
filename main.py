@@ -63,7 +63,7 @@ if __name__ == '__main__':
                         help="Mutation that swaps two nodes. (Repeated " +
                              "SWAP_NODES times)")
 
-    parser.add_argument("--swap-links", dest="swap_links",
+    parser.add_argument("--swap-link-nodes", dest="swap_link_nodes",
                         type=int,
                         help="Mutation that swaps a father and a child." +
                              " (Repeated SWAP_LINKS times)")
@@ -121,7 +121,7 @@ if __name__ == '__main__':
 
     mutate_graph = False
     if args.swap_nodes or args.add or args.relabel or args.spine or\
-       args.reorder or args.redundancy or args.delete or args.swap_links:
+       args.reorder or args.redundancy or args.delete or args.swap_link_nodes:
         mutate_graph = True
 
     link_labels = False
@@ -155,8 +155,8 @@ if __name__ == '__main__':
     if args.swap_nodes:
         m.swap_nodes(args.swap_nodes)
 
-    if args.swap_links:
-        m.swap_links(args.swap_links)
+    if args.swap_link_nodes:
+        m.swap_link_nodes(args.swap_link_nodes)
 
     if args.add:
         m.add_node(args.add)
