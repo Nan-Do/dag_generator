@@ -240,9 +240,9 @@ class MutateGraph:
                   "number possible for the current graph"
             times = len(nodes) / 2
 
-        for x in xrange(times):
-            source_node = nodes[x]
-            dest_node = nodes[x]
+        for _ in xrange(times):
+            source_node = nodes.pop()
+            dest_node = nodes.pop()
 
             self.mutations.append(("SWAP_NODES", source_node, dest_node))
             if DEBUG:
