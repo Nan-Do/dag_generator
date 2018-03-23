@@ -39,6 +39,13 @@ if __name__ == '__main__':
                         help="Generate labels for the links of the generated" +
                              " graph")
 
+    parser.add_argument("--smatchify", dest="smatchify",
+                        type=str,
+                        help="Generate a smatch like version of the graph. " +
+                             "SMATCHIFY must be the path to the file with " +
+                             "the words that will be used for the leafs. (" +
+                             "one word per line)")
+
     parser.add_argument("--dag", dest="dag",
                         type=str,
                         default="none",
@@ -138,6 +145,9 @@ if __name__ == '__main__':
     if args.link_labels:
         link_labels = True
 
+    if args.smatchify:
+        link_labels = True
+
     use_lowercase = True
     gc = GraphConfig(True,
                      False,
@@ -147,11 +157,12 @@ if __name__ == '__main__':
                      args.dag,
                      use_lowercase,
                      link_labels,
+                     args.smatchify,
                      None,
                      output_directory)
     if args.load_graph:
         gc = GraphConfig(False, True, None, None, None,
-                         None, False, False, args.load_graph,
+                         None, False, False, None, args.load_graph,
                          output_directory)
 
     # Generate the first graph

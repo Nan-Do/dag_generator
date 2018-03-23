@@ -17,6 +17,7 @@ GraphConfig = namedtuple("GraphConfig", ["populate_randomly",
                                          "dag_density",
                                          "use_lowercase",
                                          "generate_link_labels",
+                                         "smatch_words",
                                          "file_name",
                                          "output_directory"])
 
@@ -440,6 +441,71 @@ class Graph:
         print self.treelevels
         print self.treelinks
 
+    def __generate_labels(self, size=6):
+        """
+        Generate a sequence of labels for the graph's links.
+
+        By default it generates a sequence of size labels in which
+        each label is formed by the letter A and a number starting
+        with the number 0
+        """
+        return map(lambda x: 'A' + str(x), xrange(size))
+
+    def __smatchify(self, words):
+        """
+        From the current generated graph produce a smatch like graph.
+
+        To perform this transformation it will convert all the leafs
+        of the graph into english words and change the label of its
+        links to 'I'
+        """
+        # Obtain the leafs and assign them a word
+        orig_nodes = set()
+        dest_nodes = set()
+        for link in self.treelinks:
+            level, block, position = link.orig
+            orig_nodes.add(self.treelevels[level][block][position])
+            level, block, position = link.dest
+            dest_nodes.add(self.treelevels[level][block][position])
+        leafs = dest_nodes.difference(orig_nodes)
+
+        possible_words = words[:]
+        shuffle(possible_words)
+        leafs_to_words = {x: possible_words.pop() for x in leafs}
+
+        # Update the graph nodes
+        new_nodes = tuple(orig_nodes) + tuple(leafs_to_words.itervalues())
+
+        # Update the graph levels
+        new_levels = list()
+        for level in self.treelevels:
+            level_blocks = []
+            for block in level:
+                new_block = []
+                for node in block:
+                    if node in leafs:
+                        new_block.append(leafs_to_words[node])
+                    else:
+                        new_block.append(node)
+                level_blocks.append(new_block)
+            new_levels.append(level_blocks)
+
+        # Update the links
+        new_links = list()
+        for link in self.treelinks:
+            level, block, position = link.dest
+            node = self.treelevels[level][block][position]
+
+            if node in leafs:
+                new_links.append(GraphLink(link.orig, link.dest, 'I'))
+            else:
+                new_links.append(link)
+
+        # Update the old graph data with the new one
+        self.nodes = new_nodes
+        self.treelevels = new_levels
+        self.treelinks = new_links
+
     def get_random_label(self):
         """
         This function returns a random label if the graph.
@@ -561,12 +627,19 @@ class Graph:
         self.mutated = False
         # Set labels
         self.link_labels = None
-        if GraphConfig.generate_link_labels:
-            self.link_labels = map(lambda x: 'A' + str(x), xrange(4))
 
         # Choose the way to build the graph
         if GraphConfig.populate_randomly:
             self.id = random_id_generator(4)
+            if GraphConfig.generate_link_labels or \
+               GraphConfig.smatchify_the_graph:
+                self.link_labels = self.__generate_labels()
             self.__populate_randomly(GraphConfig)
+            if GraphConfig.smatch_words:
+                english_words = list()
+                with open(GraphConfig.smatch_words, 'r') as f:
+                    for word in f.readlines():
+                        english_words.append(word.strip())
+                self.__smatchify(english_words)
         elif GraphConfig.from_file:
             self.__load_from_file(GraphConfig.file_name)
