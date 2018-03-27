@@ -600,6 +600,72 @@ class MutateGraph:
                         index = block.index(to_remove)
                         block[index] = to_duplicate
 
+    def resmatchify(self, words_file):
+        """
+        Leave the graph in a valid smatch status after appying mutations
+        """
+        def update_treelevels(old_node, new_node):
+            print "Substituting:", old_node, new_node
+            for level, l in enumerate(self.graph.treelevels):
+                for block, b in enumerate(l):
+                    if old_node in b:
+                        pos = b.index(old_node)
+                        b[pos] = new_node
+
+        orig_nodes, dest_nodes, leafs = self.graph.get_leafs()
+        words = list()
+        words_set = set()
+        with open(words_file, 'r') as f:
+            for w in f.readlines():
+                word = w.strip()
+                words_set.add(word)
+                if word in leafs:
+                    continue
+                words.append(word)
+        shuffle(words)
+
+        # Check that there are only words on the leafs
+        for node in leafs:
+            if node not in words_set:
+                new_word = words.pop()
+                update_treelevels(node, new_word)
+
+        # Check that the inner nodes doesn't contain words
+        orig_nodes, dest_nodes, leafs = self.graph.get_leafs()
+        used_nodes = orig_nodes.union(dest_nodes)
+        for node in orig_nodes:
+            if node in words:
+                # Choose a new identifier
+                new_letter = None
+                for letter in ascii_lowercase + ascii_uppercase:
+                    if letter not in used_nodes:
+                        new_letter = letter
+                        used_nodes.add(new_letter)
+                        break
+
+                # Update the treelevels with the appropriate node
+                update_treelevels(node, new_letter)
+
+        orig_nodes, dest_nodes, leafs = self.graph.get_leafs()
+        bad_link_positions = list()
+        for pos, link in enumerate(self.graph.treelinks):
+            level, block, position = link.dest
+            dest_node = self.graph.treelevels[level][block][position]
+
+            if (dest_node in leafs and link.label != 'I') or\
+               (dest_node not in leafs and link.label == 'I'):
+                bad_link_positions.append(pos)
+
+        for link_position in bad_link_positions:
+            link = self.graph.treelinks[link_position]
+            new_label = 'I'
+            if link.label == 'I':
+                new_label = self.graph.get_random_label()
+
+            self.graph.treelinks[link_position] = GraphLink(link.orig,
+                                                            link.dest,
+                                                            new_label)
+
     def print_mutations_summary(self):
         """
         Show a summary of the applied mutations.

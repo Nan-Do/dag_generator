@@ -441,6 +441,24 @@ class Graph:
         print self.treelevels
         print self.treelinks
 
+    def get_leafs(self):
+        """
+        Auxiliary function to compute the leafs of the graph
+
+        The function returns the set of nodes with an incidence
+        degree, output degree and the set of leafs
+        """
+        orig_nodes = set()
+        dest_nodes = set()
+        for link in self.treelinks:
+            level, block, position = link.orig
+            orig_nodes.add(self.treelevels[level][block][position])
+            level, block, position = link.dest
+            dest_nodes.add(self.treelevels[level][block][position])
+        leafs = dest_nodes.difference(orig_nodes)
+
+        return orig_nodes, dest_nodes, leafs
+
     def __generate_labels(self, size=6):
         """
         Generate a sequence of labels for the graph's links.
@@ -460,14 +478,7 @@ class Graph:
         links to 'I'
         """
         # Obtain the leafs and assign them a word
-        orig_nodes = set()
-        dest_nodes = set()
-        for link in self.treelinks:
-            level, block, position = link.orig
-            orig_nodes.add(self.treelevels[level][block][position])
-            level, block, position = link.dest
-            dest_nodes.add(self.treelevels[level][block][position])
-        leafs = dest_nodes.difference(orig_nodes)
+        orig_nodes, _, leafs = self.get_leafs()
 
         possible_words = words[:]
         shuffle(possible_words)
@@ -632,7 +643,7 @@ class Graph:
         if GraphConfig.populate_randomly:
             self.id = random_id_generator(4)
             if GraphConfig.generate_link_labels or \
-               GraphConfig.smatchify_the_graph:
+               GraphConfig.smatch_words:
                 self.link_labels = self.__generate_labels()
             self.__populate_randomly(GraphConfig)
             if GraphConfig.smatch_words:

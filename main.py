@@ -202,6 +202,9 @@ if __name__ == '__main__':
 
     if args.swap_link_labels:
         m.swap_link_labels(args.swap_link_labels)
+        
+    if args.smatchify:
+        m.resmatchify(args.smatchify)
 
     if args.dot:
         g1.generate_dot()
