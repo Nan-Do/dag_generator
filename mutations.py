@@ -605,7 +605,6 @@ class MutateGraph:
         Leave the graph in a valid smatch status after appying mutations
         """
         def update_treelevels(old_node, new_node):
-            print "Substituting:", old_node, new_node
             for level, l in enumerate(self.graph.treelevels):
                 for block, b in enumerate(l):
                     if old_node in b:
