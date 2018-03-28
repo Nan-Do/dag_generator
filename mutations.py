@@ -665,6 +665,32 @@ class MutateGraph:
                                                             link.dest,
                                                             new_label)
 
+        position_nodes = list()
+        for level, l in enumerate(self.graph.treelevels):
+            for block, b in enumerate(l):
+                for pos, node in enumerate(b):
+                    position_nodes.append((node, Position(level, block, pos)))
+
+        more_than_one_I_link = set()
+        remove_links = set()
+        for node, position in position_nodes:
+            for p, link in enumerate(self.graph.treelinks):
+                if link.orig == position and link.label == 'I':
+                    if node in more_than_one_I_link:
+                        remove_links.add(p)
+                        continue
+                    more_than_one_I_link.add(node)
+
+        new_links = list()
+        for pos, link in enumerate(self.graph.treelinks):
+            if pos in remove_links:
+                continue
+            new_links.append(link)
+        self.graph.treelinks = new_links
+
+        orig_nodes, dest_nodes, leafs = self.graph.get_leafs()
+        self.graph.nodes = tuple(orig_nodes.union(dest_nodes))
+
     def print_mutations_summary(self):
         """
         Show a summary of the applied mutations.

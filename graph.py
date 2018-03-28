@@ -43,24 +43,9 @@ class Graph:
         so this auxiliary function finds the root for the python
         representation.
         """
-        all_nodes = set()
-        children = set()
-        for link in self.treelinks:
-            orig, dest, _ = link
-            orig_node = self.treelevels[orig.level][orig.block][orig.position]
-            dest_node = self.treelevels[dest.level][dest.block][dest.position]
-
-            all_nodes.add(orig_node)
-            all_nodes.add(dest_node)
-            children.add(dest_node)
-
-        # It might be possible that the deleting operation removes all
-        # the links in that case return the empty string
-        root = all_nodes.difference(children)
-        if not root:
+        if not len(self.treelevels):
             return ''
-
-        return root.pop()
+        return self.treelevels[0][0][0]
 
     def __generate_file_name(self, ext, append_before_ext=''):
         """
@@ -469,7 +454,7 @@ class Graph:
         """
         return map(lambda x: 'A' + str(x), xrange(size))
 
-    def __smatchify(self, words):
+    def __smatchify_old(self, words):
         """
         From the current generated graph produce a smatch like graph.
 
@@ -516,6 +501,48 @@ class Graph:
         self.nodes = new_nodes
         self.treelevels = new_levels
         self.treelinks = new_links
+
+    def __smatchify(self, words):
+        """
+        From the current generated graph produce a smatch like graph.
+
+        To perform this transformation it will convert all the leafs
+        of the graph into english words and change the label of its
+        links to 'I'
+        """
+        # Obtain the leafs and assign them a word
+        position_nodes = list()
+        for level, l in enumerate(self.treelevels):
+            for block, b in enumerate(l):
+                for pos, node in enumerate(b):
+                    position_nodes.append((node, Position(level, block, pos)))
+
+        possible_words = words[:]
+        shuffle(possible_words)
+
+        for node, position in position_nodes:
+            new_word = possible_words.pop()
+            level = block = None
+
+            for link in self.treelinks:
+                if link.orig == position:
+                    level, block, _ = link.dest
+                    break
+
+            if level is None:
+                level = link.orig.level + 1
+                if level >= len(self.treelevels):
+                    self.treelevels.append([])
+                block = len(self.treelevels[level])
+                self.treelevels[level].append([node])
+
+            self.treelevels[level][block].append(new_word)
+            block_position = len(self.treelevels[level][block]) - 1
+            self.treelinks.append(GraphLink(position,
+                                            Position(level,
+                                                     block,
+                                                     block_position),
+                                            'I'))
 
     def get_random_label(self):
         """
