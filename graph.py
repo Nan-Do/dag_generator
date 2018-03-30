@@ -1,4 +1,4 @@
-from collections import defaultdict, namedtuple
+from collections import defaultdict, namedtuple, Counter
 from itertools import chain
 from random import choice, shuffle, normalvariate, randint
 from string import ascii_lowercase, ascii_uppercase, digits
@@ -422,6 +422,68 @@ class Graph:
                 f.write("\t '{}': {},\n".format(k, graph[k]))
             f.write('\t}\n')
 
+    def __build_smatch_string(self, position, level, node_links):
+        res = "("
+        level, block, pos = position
+        node = self.treelevels[level][block][pos]
+
+        links = filter(lambda x: x.orig == position,
+                       self.treelinks)
+        word = None
+        rest_of_links = []
+
+        for link in links:
+            if link.label == "I":
+                level, block, position = link.dest
+                word = self.treelevels[level][block][position]
+            else:
+                rest_of_links.append(link)
+
+        res += node + " / " + str(word)
+        if len(rest_of_links):
+            res += "\n"
+        spaces = "  " * (level + 1)
+        for p, link in enumerate(rest_of_links):
+            level, block, pos = link.dest
+            node = self.treelevels[level][block][pos]
+
+            if node_links[node] > 1:
+                res += node
+                node_links[node] -= 1
+            else:
+                res += spaces + ":ARG" + link.label[-1] + " "
+                res += self.__build_smatch_string(link.dest,
+                                                  level + 1,
+                                                  node_links)
+
+            if p != len(rest_of_links) - 1:
+                res += "\n"
+
+        res += ")"
+        return res
+
+    def store_smatch_representation(self):
+        """
+        """
+        file_name = self.__generate_file_name('txt', '-smatch')
+
+        non_I_links = filter(lambda x: x.label != "I",
+                             self.treelinks)
+
+        node_links = list()
+        for link in non_I_links:
+            level, block, pos = link.dest
+            node = self.treelevels[level][block][pos]
+            node_links.append(node)
+        node_links_counter = Counter(node_links)
+
+        with open(file_name, "w") as f:
+            position = Position(0, 0, 0)
+            s = self.__build_smatch_string(position,
+                                           0,
+                                           node_links_counter)
+            f.write(s)
+
     def print_graph(self):
         print self.treelevels
         print self.treelinks
@@ -454,7 +516,7 @@ class Graph:
         """
         return map(lambda x: 'A' + str(x), xrange(size))
 
-    def __smatchify_old(self, words):
+    def __smatchify(self, words):
         """
         From the current generated graph produce a smatch like graph.
 
@@ -463,7 +525,7 @@ class Graph:
         links to 'I'
         """
         # Obtain the leafs and assign them a word
-        orig_nodes, _, leafs = self.get_leafs()
+        orig_nodes, dest_nodes, leafs = self.get_leafs()
 
         possible_words = words[:]
         shuffle(possible_words)
@@ -472,7 +534,6 @@ class Graph:
         # Update the graph nodes
         new_nodes = tuple(orig_nodes) + tuple(leafs_to_words.itervalues())
 
-        # Update the graph levels
         new_levels = list()
         for level in self.treelevels:
             level_blocks = []
@@ -488,61 +549,60 @@ class Graph:
 
         # Update the links
         new_links = list()
+        orig_I_nodes = set()
         for link in self.treelinks:
             level, block, position = link.dest
             node = self.treelevels[level][block][position]
 
             if node in leafs:
+                if link.orig in orig_I_nodes:
+                    continue
                 new_links.append(GraphLink(link.orig, link.dest, 'I'))
+                orig_I_nodes.add(link.orig)
             else:
                 new_links.append(link)
+
+        leaf_words = set(leafs_to_words.itervalues())
+        new_word_positions = list()
+        for level, l in enumerate(new_levels):
+            for block, b in enumerate(l):
+                for position, node in enumerate(b):
+                    link_pos = Position(level,
+                                        block,
+                                        position)
+                    if node in leaf_words:
+                        continue
+                    has_I_link = False
+                    for link in new_links:
+                        if link.orig == link_pos and \
+                           link.label == "I":
+                            has_I_link = True
+                            break
+
+                    if not has_I_link:
+                        new_word_positions.append(link_pos)
+
+        for position in new_word_positions:
+            new_word = possible_words.pop()
+            new_nodes += (new_word,)
+
+            new_level = position.level + 1
+            if new_level >= len(new_levels):
+                new_levels.append([])
+            new_block = len(new_levels[new_level])
+            new_pos = 0
+
+            new_levels[new_level].append([new_word])
+            new_links.append(GraphLink(position,
+                                       Position(new_level,
+                                                new_block,
+                                                new_pos),
+                                       "I"))
 
         # Update the old graph data with the new one
         self.nodes = new_nodes
         self.treelevels = new_levels
         self.treelinks = new_links
-
-    def __smatchify(self, words):
-        """
-        From the current generated graph produce a smatch like graph.
-
-        To perform this transformation it will convert all the leafs
-        of the graph into english words and change the label of its
-        links to 'I'
-        """
-        # Obtain the leafs and assign them a word
-        position_nodes = list()
-        for level, l in enumerate(self.treelevels):
-            for block, b in enumerate(l):
-                for pos, node in enumerate(b):
-                    position_nodes.append((node, Position(level, block, pos)))
-
-        possible_words = words[:]
-        shuffle(possible_words)
-
-        for node, position in position_nodes:
-            new_word = possible_words.pop()
-            level = block = None
-
-            for link in self.treelinks:
-                if link.orig == position:
-                    level, block, _ = link.dest
-                    break
-
-            if level is None:
-                level = link.orig.level + 1
-                if level >= len(self.treelevels):
-                    self.treelevels.append([])
-                block = len(self.treelevels[level])
-                self.treelevels[level].append([node])
-
-            self.treelevels[level][block].append(new_word)
-            block_position = len(self.treelevels[level][block]) - 1
-            self.treelinks.append(GraphLink(position,
-                                            Position(level,
-                                                     block,
-                                                     block_position),
-                                            'I'))
 
     def get_random_label(self):
         """
@@ -616,26 +676,15 @@ class Graph:
             print "Number of nodes for the graph:", number_of_nodes, '/', size
             print
 
-        counter = 1
-        while (True):
-            if (counter % 100) == 0:
-                counter = 1
-                lists_of_nodes = self.__generate_nodelists(pool_of_nodes,
-                                                           num_of_lists,
-                                                           outdegree)
-            self.treelevels = self.__generate_treelevels(root,
-                                                         lists_of_nodes,
-                                                         depth)
-            counter += 1
-            if self.__is_normalized():
-                break
-
+        self.treelevels = self.__generate_treelevels(root,
+                                                     lists_of_nodes,
+                                                     depth)
         if DEBUG:
             print "Generated Lists:"
             for pos, x in enumerate(self.treelevels):
                 print '  ', pos, x
             print
-        # self.__normalize_treelevels()
+        self.__normalize_treelevels()
 
         if DEBUG:
             print "Normalized Lists:"
@@ -668,16 +717,24 @@ class Graph:
 
         # Choose the way to build the graph
         if GraphConfig.populate_randomly:
+            # Generate the graph id
             self.id = random_id_generator(4)
+
+            # Generate the labels
             if GraphConfig.generate_link_labels or \
                GraphConfig.smatch_words:
                 self.link_labels = self.__generate_labels()
+
+            # Populate the graph
             self.__populate_randomly(GraphConfig)
+
+            # Generate a smatch valid version of the graph
             if GraphConfig.smatch_words:
                 english_words = list()
                 with open(GraphConfig.smatch_words, 'r') as f:
                     for word in f.readlines():
                         english_words.append(word.strip())
                 self.__smatchify(english_words)
+
         elif GraphConfig.from_file:
             self.__load_from_file(GraphConfig.file_name)

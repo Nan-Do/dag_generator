@@ -202,9 +202,12 @@ if __name__ == '__main__':
 
     if args.swap_link_labels:
         m.swap_link_labels(args.swap_link_labels)
-        
+
     if args.smatchify:
         m.resmatchify(args.smatchify)
+        g1.store_smatch_representation()
+        if mutate_graph:
+            g2.store_smatch_representation()
 
     if args.dot:
         g1.generate_dot()
