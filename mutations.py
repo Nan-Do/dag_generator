@@ -186,7 +186,7 @@ class MutateGraph:
         # In case there are no identifiers available generate new ones.
         if len(nodes_to_add) == 0:
             last = max(nodes)
-            nodes_to_add = set(xrange(last+1, last+1+new_identifiers))
+            nodes_to_add = set(xrange(last + 1, last + 1 + new_identifiers))
 
         nodes_to_add = list(nodes_to_add)
         shuffle(nodes_to_add)
