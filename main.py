@@ -5,6 +5,7 @@ from copy import deepcopy
 
 from graph import Graph, GraphConfig
 from mutations import MutateGraph
+from reload_opcodes import ReloadOpcodes
 
 if __name__ == '__main__':
     d = "Generate random acyclic directed graphs and produce mutations to " +\
@@ -64,6 +65,11 @@ if __name__ == '__main__':
     parser.add_argument("--load-graph", dest="load_graph",
                         type=str,
                         help="Load the graph from a file")
+
+    parser.add_argument("--load-opcodes", dest="load_opcodes",
+                        action="store_true",
+                        help="Apply the mutations specified by the opcodes " +
+                             "(load-graph must be specified")
 
     parser.add_argument("--swap-nodes", dest="swap_nodes",
                         type=int,
@@ -131,6 +137,10 @@ if __name__ == '__main__':
     if args.load_graph:
         load_graph = args.load_graph
 
+    if args.load_opcodes and not args.load_graph:
+        print "Error specified to load the opcodes but load-graph option was not specified"
+        sys.exit(0)
+
     output_directory = '.'
     if args.output_directory:
         output_directory = args.output_directory
@@ -168,8 +178,13 @@ if __name__ == '__main__':
     # Generate the first graph
     g1 = Graph(gc)
 
-    # Create a copy of the graph to mutate
-    g2 = deepcopy(g1)
+    # Create a copy of the graph to mutate or use the opcodes to rebuild
+    # a previous set of mutations.
+    g2 = None
+    if not args.load_opcodes:
+        g2 = deepcopy(g1)
+    else:
+        g2 = ReloadOpcodes(g1).graph
     m = MutateGraph(g2)
 
     # Do the mutations
